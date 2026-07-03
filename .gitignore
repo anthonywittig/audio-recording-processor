@@ -1,0 +1,58 @@
+# ---- Terraform ----
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars.local
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+.terraform.lock.hcl.bak
+
+# ---- Secrets / env ----
+.env
+.env.*
+*.pem
+*.key
+!**/testdata/*.key
+
+# ---- Node / TypeScript ----
+node_modules/
+dist/
+*.tsbuildinfo
+npm-debug.log*
+
+# ---- Java ----
+target/
+.gradle/
+build/
+*.class
+dependency-reduced-pom.xml
+
+# ---- Go ----
+/bin/
+*.test
+*.out
+# compiled module binaries (named after their directory)
+services/summarize-go/summarize-go
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# ---- Ruby ----
+.bundle/
+vendor/bundle/
+
+# ---- Editor / OS ----
+.DS_Store
+.idea/
+.vscode/
+*.swp
