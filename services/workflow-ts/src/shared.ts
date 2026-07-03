@@ -1,0 +1,71 @@
+// Shared contract between the workflow and the (polyglot) activity workers.
+//
+// IMPORTANT: the activity *names* and their input/output shapes below are the
+// wire contract. The Java/Go/Python/Ruby workers must register activities under
+// these exact names and read/write these exact JSON fields. Temporal serializes
+// activity args/results as JSON, so field names matter across languages.
+
+/** Task queues. Each activity worker polls its own queue; the workflow worker
+ *  polls `workflow`. Keep these strings in sync with the other services. */
+export const TASK_QUEUES = {
+  workflow: 'workflow',
+  transcribe: 'transcribe',
+  summarize: 'summarize',
+  actionItems: 'action-items',
+  email: 'email',
+} as const;
+
+/** Input to the top-level workflow. */
+export interface ProcessAudioInput {
+  /** S3 bucket holding the audio file (and where outputs are written). */
+  bucket: string;
+  /** S3 key of the uploaded audio file. */
+  audioKey: string;
+  /** Where to send the final summary email. */
+  recipientEmail: string;
+}
+
+// ---- Activity input/output shapes (S3 keys, never payloads) ----
+
+export interface TranscribeInput {
+  bucket: string;
+  audioKey: string;
+}
+export interface TranscribeResult {
+  transcriptKey: string;
+}
+
+export interface SummarizeInput {
+  bucket: string;
+  transcriptKey: string;
+}
+export interface SummarizeResult {
+  summaryKey: string;
+}
+
+export interface ActionItemsInput {
+  bucket: string;
+  transcriptKey: string;
+}
+export interface ActionItemsResult {
+  actionItemsKey: string;
+}
+
+export interface EmailInput {
+  bucket: string;
+  transcriptKey: string;
+  summaryKey: string;
+  actionItemsKey: string;
+  recipientEmail: string;
+}
+export interface EmailResult {
+  messageId: string;
+}
+
+/** The full set of activity signatures, keyed by their registered names. */
+export interface Activities {
+  transcribeAudio(input: TranscribeInput): Promise<TranscribeResult>;
+  summarizeTranscript(input: SummarizeInput): Promise<SummarizeResult>;
+  extractActionItems(input: ActionItemsInput): Promise<ActionItemsResult>;
+  sendEmail(input: EmailInput): Promise<EmailResult>;
+}

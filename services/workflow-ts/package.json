@@ -1,0 +1,23 @@
+{
+  "name": "workflow-ts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Temporal workflow definition + workflow worker for audio-recording-processor",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "worker": "node dist/worker.js",
+    "stub-worker": "node dist/stub-worker.js",
+    "start-workflow": "node dist/client.js"
+  },
+  "dependencies": {
+    "@temporalio/activity": "^1.11.0",
+    "@temporalio/client": "^1.11.0",
+    "@temporalio/worker": "^1.11.0",
+    "@temporalio/workflow": "^1.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0"
+  }
+}
