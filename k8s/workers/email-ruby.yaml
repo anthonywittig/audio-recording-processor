@@ -35,9 +35,10 @@ spec:
               value: default
             - name: AWS_REGION
               value: us-east-1
-            # Must be an SES-verified identity (sandbox). Used as the From address.
+            # From address on the verified witski.com domain (MAIL FROM is
+            # temporal-sandbox.witski.com). Domain verification covers subdomains.
             - name: SES_SENDER
-              value: anthony.wittig@gmail.com
+              value: noreply@temporal-sandbox.witski.com
           resources:
             requests:
               cpu: 50m

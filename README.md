@@ -192,6 +192,6 @@ kubectl apply -f k8s/workers/summarize-go.yaml
 - [x] **1** — Core AWS infra (VPC, EKS, RDS, ECR)
 - [x] **2** — Temporal server via Helm (external RDS, no OpenSearch)
 - [x] **3** — TS workflow worker + stub activities (prove routing)
-- [~] **4** — Polyglot activity workers (Java, Go, Python, Ruby) — code done, not yet deployed
+- [x] **4** — Polyglot activity workers (Java, Go, Python, Ruby) — deployed; full pipeline verified end-to-end (audio → transcript → summary + action items → email)
 - [ ] **5** — Automatic S3 intake
 - [ ] **6** — SES inbound email (deferred / stretch)
