@@ -163,6 +163,29 @@ kubectl exec -n temporal deploy/temporal-admintools -- \
 - Web UI is internal (ClusterIP). Reach it locally:
   `kubectl port-forward -n temporal svc/temporal-web 8080:8080` → http://localhost:8080
 
+## Deploying a worker (Phase 4)
+
+Each worker follows the same path — build an image, push to its ECR repo, apply a
+Deployment whose ServiceAccount is IRSA-bound to a least-privilege role. The
+summarize (Go) worker is the reference:
+
+```bash
+ECR=977924542119.dkr.ecr.us-east-1.amazonaws.com
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR
+# IMPORTANT: nodes are amd64; build for that platform or the pod crashes (exec format error)
+docker build --platform linux/amd64 -t $ECR/arp/summarize-go:latest services/summarize-go
+docker push $ECR/arp/summarize-go:latest
+kubectl apply -f k8s/workers/summarize-go.yaml
+```
+
+- Workers run in the `arp` namespace and reach Temporal at
+  `temporal-frontend.temporal.svc:7233` (cross-namespace, frontend stays internal).
+- IRSA roles live in [infra/terraform/poc/irsa.tf](infra/terraform/poc/irsa.tf); the SA
+  annotation's role ARN must match, and the role's trust policy pins the exact
+  `namespace:serviceaccount`.
+- Verify a worker is polling: `kubectl exec -n temporal deploy/temporal-admintools --
+  temporal task-queue describe --address temporal-frontend:7233 -n default --task-queue summarize`.
+
 ## Build phases
 
 - [x] **0** — Scaffolding & Terraform remote state
