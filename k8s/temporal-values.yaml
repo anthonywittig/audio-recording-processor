@@ -1,0 +1,80 @@
+# Helm values for the Temporal server (chart temporalio/temporal 1.5.0,
+# Temporal 1.31.1) configured for our self-hosted setup:
+#   - external RDS PostgreSQL (no bundled Cassandra/DB)
+#   - SQL visibility store on Postgres 12+ => advanced visibility, no OpenSearch
+#   - single replicas, internal-only Web UI (reach via `kubectl port-forward`)
+#
+# Prereqs (created out-of-band; see README):
+#   - namespace `temporal`
+#   - secret `temporal-db` in that namespace with key `password` (the RDS password)
+#
+# connectAddr is environment-specific — it must match:
+#   terraform -chdir=infra/terraform/poc output -raw  # (db host)
+# For this POC it is pinned to the current RDS endpoint.
+
+server:
+  enabled: true
+  replicaCount: 1
+  image:
+    tag: 1.31.1
+
+  config:
+    persistence:
+      defaultStore: default
+      visibilityStore: visibility
+      numHistoryShards: 512
+      datastores:
+        default:
+          sql:
+            pluginName: postgres12
+            driverName: postgres12
+            databaseName: temporal
+            connectAddr: "arp-temporal.c2fk4k2war13.us-east-1.rds.amazonaws.com:5432"
+            connectProtocol: tcp
+            user: temporal
+            existingSecret: temporal-db
+            secretKey: password
+            # RDS already created the `temporal` database; just manage schema in it.
+            createDatabase: false
+            manageSchema: true
+            maxConns: 20
+            maxIdleConns: 20
+            # RDS enforces SSL (rds.force_ssl=1). Encrypt without host
+            # verification so we don't need to ship the RDS CA bundle.
+            tls:
+              enabled: true
+              enableHostVerification: false
+        visibility:
+          sql:
+            pluginName: postgres12
+            driverName: postgres12
+            databaseName: temporal_visibility
+            connectAddr: "arp-temporal.c2fk4k2war13.us-east-1.rds.amazonaws.com:5432"
+            connectProtocol: tcp
+            user: temporal
+            existingSecret: temporal-db
+            secretKey: password
+            # Chart creates the visibility database and its schema.
+            createDatabase: true
+            manageSchema: true
+            maxConns: 10
+            maxIdleConns: 10
+            tls:
+              enabled: true
+              enableHostVerification: false
+
+# Run schema setup/update as Helm hook jobs before the server starts.
+schema:
+  useHelmHooks: true
+
+# These shims exist for Temporal 1.29 images; disable on 1.30+.
+shims:
+  dockerize: false
+  elasticsearchTool: false
+
+# Internal-only Web UI (port-forward to reach it during the POC).
+web:
+  enabled: true
+  replicaCount: 1
+  service:
+    type: ClusterIP
