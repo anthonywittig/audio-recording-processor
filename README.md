@@ -133,12 +133,42 @@ to leave enabled.
 | **NAT gateway (single)** | **~$32** ← biggest avoidable |
 | ECR / S3 / SQS / Transcribe / Bedrock / SES | pennies at POC volume |
 
+## Temporal server (Phase 2)
+
+Deployed with the `temporalio/temporal` Helm chart (1.5.0 / Temporal 1.31.1),
+configured for external RDS Postgres and SQL visibility (advanced visibility on
+Postgres 12+, so **no OpenSearch**). Values: [k8s/temporal-values.yaml](k8s/temporal-values.yaml).
+
+```bash
+# namespace + DB password secret (password pulled from Secrets Manager)
+kubectl create namespace temporal
+PW=$(aws secretsmanager get-secret-value --secret-id arp/temporal-db \
+  --query SecretString --output text | python3 -c "import sys,json;print(json.load(sys.stdin)['password'])")
+kubectl create secret generic temporal-db -n temporal --from-literal=password="$PW"
+
+helm repo add temporalio https://go.temporal.io/helm-charts && helm repo update
+helm install temporal temporalio/temporal -n temporal --version 1.5.0 \
+  -f k8s/temporal-values.yaml --timeout 6m
+
+# register the app namespace the workers use
+kubectl exec -n temporal deploy/temporal-admintools -- \
+  temporal operator namespace create --address temporal-frontend:7233 --retention 72h default
+```
+
+- **RDS requires SSL** (`rds.force_ssl=1`), so each datastore sets `tls.enabled: true`
+  with `enableHostVerification: false` (encrypt without shipping the RDS CA). Without
+  this the schema-setup hook fails with `no pg_hba.conf entry ... no encryption`.
+- The `connectAddr` in the values file is the RDS endpoint from `terraform output`; update
+  it if the DB is recreated.
+- Web UI is internal (ClusterIP). Reach it locally:
+  `kubectl port-forward -n temporal svc/temporal-web 8080:8080` → http://localhost:8080
+
 ## Build phases
 
-- [ ] **0** — Scaffolding & Terraform remote state
-- [ ] **1** — Core AWS infra (VPC, EKS, RDS, ECR)
-- [ ] **2** — Temporal server via Helm (external RDS, no OpenSearch)
-- [ ] **3** — TS workflow worker + stub activities (prove routing)
-- [ ] **4** — Polyglot activity workers (Java, Go, Python, Ruby)
+- [x] **0** — Scaffolding & Terraform remote state
+- [x] **1** — Core AWS infra (VPC, EKS, RDS, ECR)
+- [x] **2** — Temporal server via Helm (external RDS, no OpenSearch)
+- [x] **3** — TS workflow worker + stub activities (prove routing)
+- [~] **4** — Polyglot activity workers (Java, Go, Python, Ruby) — code done, not yet deployed
 - [ ] **5** — Automatic S3 intake
 - [ ] **6** — SES inbound email (deferred / stretch)
