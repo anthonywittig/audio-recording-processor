@@ -1,0 +1,7 @@
+source 'https://rubygems.org'
+
+# Temporal Ruby SDK requires Ruby >= 3.1 (native Rust core). The dev machine's
+# system Ruby is 2.6, so build/run this in a container or a modern Ruby.
+gem 'temporalio'
+gem 'aws-sdk-s3'
+gem 'aws-sdk-sesv2'
