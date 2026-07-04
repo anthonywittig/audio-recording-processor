@@ -1,12 +1,7 @@
-# Namespace for the application workers, plus the summarize-go worker and its
-# IRSA-bound ServiceAccount. The SA annotation ties it to the Terraform role
-# (arp-summarize); the OIDC subject in that role's trust policy must match
-# namespace/serviceaccount exactly (arp/summarize-go).
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: arp
----
+# summarize-go worker and its IRSA-bound ServiceAccount. The SA annotation ties
+# it to the Terraform role (arp-summarize); the OIDC subject in that role's trust
+# policy must match namespace/serviceaccount exactly (arp/summarize-go). The arp
+# namespace is created by 00-namespace.yaml.
 apiVersion: v1
 kind: ServiceAccount
 metadata:

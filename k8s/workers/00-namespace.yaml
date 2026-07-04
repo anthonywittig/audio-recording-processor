@@ -1,0 +1,6 @@
+# Application namespace for all workers. Named 00- so `kubectl apply -f
+# k8s/workers/` (alphabetical) creates it before the Deployments that use it.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: arp
