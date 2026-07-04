@@ -1,0 +1,19 @@
+{
+  "name": "intake-ts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Consumes S3-upload events from SQS and starts the processAudio workflow",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sqs": "^3.632.0",
+    "@temporalio/client": "^1.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0"
+  }
+}

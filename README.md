@@ -193,5 +193,5 @@ kubectl apply -f k8s/workers/summarize-go.yaml
 - [x] **2** — Temporal server via Helm (external RDS, no OpenSearch)
 - [x] **3** — TS workflow worker + stub activities (prove routing)
 - [x] **4** — Polyglot activity workers (Java, Go, Python, Ruby) — deployed; full pipeline verified end-to-end (audio → transcript → summary + action items → email)
-- [ ] **5** — Automatic S3 intake
+- [x] **5** — Automatic S3 intake (upload → S3 event → SQS → intake-ts starts the workflow) — verified end-to-end
 - [ ] **6** — SES inbound email (deferred / stretch)
