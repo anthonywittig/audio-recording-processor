@@ -13,6 +13,8 @@ override.tf.json
 .terraformrc
 terraform.rc
 .terraform.lock.hcl.bak
+# Terraform-built Lambda zips
+**/.build/
 
 # ---- Secrets / env ----
 .env
