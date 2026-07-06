@@ -186,6 +186,27 @@ kubectl apply -f k8s/workers/summarize-go.yaml
 - Verify a worker is polling: `kubectl exec -n temporal deploy/temporal-admintools --
   temporal task-queue describe --address temporal-frontend:7233 -n default --task-queue summarize`.
 
+## Shared transcript schema (protobuf)
+
+The normalized transcript — written by the Java worker, read by the Go and Python
+workers — is defined once in [proto/transcript.proto](proto/transcript.proto) and
+generated per-language. It's stored in S3 as **proto-JSON** (proto3's canonical JSON
+mapping), so the file stays human-readable while the `.proto` is the single source of
+truth for the shape. Writers use "always print fields" and readers ignore unknown fields
+so all three languages agree byte-for-byte.
+
+Generated code is committed (builds don't need `protoc`). Regenerate after editing the
+proto:
+
+```bash
+brew install protobuf
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+bash proto/gen.sh
+```
+
+The remaining cross-language shapes (the small Temporal activity DTOs) are still
+hand-maintained JSON — see task tracking / [shared.ts](services/workflow-ts/src/shared.ts).
+
 ## Build phases
 
 - [x] **0** — Scaffolding & Terraform remote state
