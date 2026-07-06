@@ -28,7 +28,7 @@ class Emailer
     bucket = input.bucket
     summary = read_summary(bucket, input.summary_key)
     action_items = read_action_items(bucket, input.action_items_key)
-    transcript = read_transcript_text(bucket, input.transcript_key)
+    transcript = read_transcript(bucket, input.transcript_key)
     recipient = input.recipient_email
 
     resp = @ses.send_email(
@@ -59,11 +59,11 @@ class Emailer
   end
 
   # The transcript is proto-JSON (proto/transcript.proto); parse it into the
-  # generated Ruby type and return the full text. ignore_unknown_fields keeps us
-  # forward-compatible if new fields are added upstream.
-  def read_transcript_text(bucket, key)
+  # generated Ruby type. ignore_unknown_fields keeps us forward-compatible if new
+  # fields are added upstream.
+  def read_transcript(bucket, key)
     json = @s3.get_object(bucket: bucket, key: key).body.read
-    Arp::V1::Transcript.decode_json(json, ignore_unknown_fields: true).text
+    Arp::V1::Transcript.decode_json(json, ignore_unknown_fields: true)
   end
 
   def build_body(summary, action_items, transcript)
@@ -84,7 +84,34 @@ class Emailer
     lines << ''
     lines << 'TRANSCRIPT'
     lines << '=========='
-    lines << transcript
+    lines << format_transcript(transcript)
+    lines.join("\n")
+  end
+
+  # Render the transcript with speaker attribution. AWS Transcribe diarizes into
+  # anonymous labels (spk_0, spk_1, ...), so we present them as "Speaker 1",
+  # "Speaker 2", ... in first-appearance order, list the participants, and group
+  # each speaker's consecutive segments into one turn. Falls back to the flat
+  # transcript text when there are no diarized segments (e.g. a single speaker).
+  def format_transcript(transcript)
+    segments = transcript.segments.to_a.reject { |s| s.text.to_s.strip.empty? }
+    return transcript.text if segments.empty?
+
+    names = {}
+    segments.each { |s| names[s.speaker] ||= "Speaker #{names.size + 1}" }
+
+    turns = []
+    segments.each do |seg|
+      name = names[seg.speaker]
+      if turns.empty? || turns.last[:name] != name
+        turns << { name: name, text: seg.text.strip.dup }
+      else
+        turns.last[:text] << ' ' << seg.text.strip
+      end
+    end
+
+    lines = ["Participants: #{names.values.join(', ')}", '']
+    turns.each { |t| lines << "#{t[:name]}: #{t[:text]}" }
     lines.join("\n")
   end
 end
