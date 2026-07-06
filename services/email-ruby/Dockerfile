@@ -6,5 +6,5 @@ RUN apt-get update && apt-get install -y --no-install-recommends build-essential
     && rm -rf /var/lib/apt/lists/*
 COPY Gemfile .
 RUN bundle install
-COPY worker.rb send_email_activity.rb transcript_pb.rb summary_pb.rb action_items_pb.rb ./
+COPY worker.rb send_email_activity.rb transcript_pb.rb summary_pb.rb action_items_pb.rb dtos_pb.rb ./
 CMD ["ruby", "worker.rb"]

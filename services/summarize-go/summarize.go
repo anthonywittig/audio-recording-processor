@@ -20,17 +20,9 @@ import (
 	arpv1 "github.com/anthonywittig/audio-recording-processor/services/summarize-go/gen/arpv1"
 )
 
-// SummarizeInput / SummarizeResult mirror the shapes in
-// services/workflow-ts/src/shared.ts. JSON field names are the cross-language
-// contract, so they must match exactly.
-type SummarizeInput struct {
-	Bucket        string `json:"bucket"`
-	TranscriptKey string `json:"transcriptKey"`
-}
-
-type SummarizeResult struct {
-	SummaryKey string `json:"summaryKey"`
-}
+// SummarizeInput / SummarizeResult are protobuf Temporal-payload DTOs, defined
+// in proto/dtos.proto (arpv1). The Go SDK's default converter encodes/decodes
+// them automatically.
 
 // The transcript shape is defined once in proto/transcript.proto and generated
 // into gen/arpv1. The Java worker writes it to S3 as proto-JSON; here we parse
@@ -88,32 +80,33 @@ func resolveAPIKey(ctx context.Context, cfg aws.Config) (string, error) {
 
 // SummarizeTranscript reads the transcript from S3, summarizes it with OpenAI,
 // and writes the summary JSON back to S3, returning the new key.
-func (a *activities) SummarizeTranscript(ctx context.Context, in SummarizeInput) (SummarizeResult, error) {
-	text, err := a.readTranscriptText(ctx, in.Bucket, in.TranscriptKey)
+func (a *activities) SummarizeTranscript(ctx context.Context, in *arpv1.SummarizeInput) (*arpv1.SummarizeResult, error) {
+	bucket := in.GetBucket()
+	text, err := a.readTranscriptText(ctx, bucket, in.GetTranscriptKey())
 	if err != nil {
-		return SummarizeResult{}, err
+		return nil, err
 	}
 
 	summary, err := a.summarize(ctx, text)
 	if err != nil {
-		return SummarizeResult{}, err
+		return nil, err
 	}
 
-	summaryKey := deriveSummaryKey(in.TranscriptKey)
+	summaryKey := deriveSummaryKey(in.GetTranscriptKey())
 	body, err := protojson.MarshalOptions{EmitDefaultValues: true}.Marshal(&arpv1.Summary{Summary: summary})
 	if err != nil {
-		return SummarizeResult{}, fmt.Errorf("marshal summary: %w", err)
+		return nil, fmt.Errorf("marshal summary: %w", err)
 	}
 	if _, err := a.s3.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:      &in.Bucket,
+		Bucket:      &bucket,
 		Key:         &summaryKey,
 		Body:        bytes.NewReader(body),
 		ContentType: aws.String("application/json"),
 	}); err != nil {
-		return SummarizeResult{}, fmt.Errorf("put summary %s: %w", summaryKey, err)
+		return nil, fmt.Errorf("put summary %s: %w", summaryKey, err)
 	}
 
-	return SummarizeResult{SummaryKey: summaryKey}, nil
+	return &arpv1.SummarizeResult{SummaryKey: summaryKey}, nil
 }
 
 func (a *activities) readTranscriptText(ctx context.Context, bucket, key string) (string, error) {

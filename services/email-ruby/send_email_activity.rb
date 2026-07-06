@@ -5,6 +5,7 @@ require 'temporalio/activity'
 require_relative 'transcript_pb'
 require_relative 'summary_pb'
 require_relative 'action_items_pb'
+require_relative 'dtos_pb'
 
 # Composes and sends the summary email via SES. Singleton so the SES/S3 clients
 # and sender config are created once and reused across activity executions.
@@ -21,14 +22,14 @@ class Emailer
     raise 'set SES_SENDER (a verified SES identity)' if @sender.nil? || @sender.empty?
   end
 
-  # input is a Hash with string keys matching EmailInput in
-  # services/workflow-ts/src/shared.ts.
+  # input is a protobuf arp.v1.EmailInput (proto/dtos.proto); the Ruby SDK's
+  # default converter decodes the Temporal payload into it.
   def send_email(input)
-    bucket = input['bucket']
-    summary = read_summary(bucket, input['summaryKey'])
-    action_items = read_action_items(bucket, input['actionItemsKey'])
-    transcript = read_transcript_text(bucket, input['transcriptKey'])
-    recipient = input['recipientEmail']
+    bucket = input.bucket
+    summary = read_summary(bucket, input.summary_key)
+    action_items = read_action_items(bucket, input.action_items_key)
+    transcript = read_transcript_text(bucket, input.transcript_key)
+    recipient = input.recipient_email
 
     resp = @ses.send_email(
       from_email_address: @sender,
@@ -40,7 +41,7 @@ class Emailer
         }
       }
     )
-    { 'messageId' => resp.message_id }
+    Arp::V1::EmailResult.new(message_id: resp.message_id)
   end
 
   private
