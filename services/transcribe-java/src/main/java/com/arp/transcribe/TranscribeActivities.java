@@ -1,7 +1,7 @@
 package com.arp.transcribe;
 
-import com.arp.transcribe.model.TranscribeInput;
-import com.arp.transcribe.model.TranscribeResult;
+import com.arp.proto.TranscribeInput;
+import com.arp.proto.TranscribeResult;
 import io.temporal.activity.ActivityInterface;
 import io.temporal.activity.ActivityMethod;
 

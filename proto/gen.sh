@@ -38,4 +38,12 @@ ruby_gen summary.proto
 py_gen   action_items.proto
 ruby_gen action_items.proto
 
+# dtos (Temporal payloads). Backend workers use their SDK's default proto
+# converter; workflow-ts/intake-ts use protobufjs via a custom converter.
+java_gen dtos.proto
+# TypeScript (workflow-ts): protobufjs json-module -> real Root for the converter.
+(cd services/workflow-ts \
+  && npx pbjs -t json-module -w commonjs -o src/proto/root.js ../../proto/dtos.proto \
+  && npx pbts -o src/proto/root.d.ts src/proto/root.js)
+
 echo "generated."

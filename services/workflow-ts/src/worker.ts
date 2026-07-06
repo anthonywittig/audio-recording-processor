@@ -16,6 +16,11 @@ async function run(): Promise<void> {
     namespace,
     taskQueue: TASK_QUEUES.workflow,
     workflowsPath: require.resolve('./workflows'),
+    dataConverter: { payloadConverterPath: require.resolve('./payload-converter') },
+    // protobufjs references 'fs' for loading .proto files from disk, which never
+    // happens at runtime (we use a precompiled root). Safe to exclude from the
+    // deterministic workflow bundle.
+    bundlerOptions: { ignoreModules: ['fs'] },
   });
 
   console.log(

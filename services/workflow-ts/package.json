@@ -4,7 +4,7 @@
   "private": true,
   "description": "Temporal workflow definition + workflow worker for audio-recording-processor",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && mkdir -p dist/proto && cp src/proto/root.js dist/proto/",
     "clean": "rm -rf dist",
     "worker": "node dist/worker.js",
     "stub-worker": "node dist/stub-worker.js",
@@ -14,10 +14,12 @@
     "@temporalio/activity": "^1.11.0",
     "@temporalio/client": "^1.11.0",
     "@temporalio/worker": "^1.11.0",
-    "@temporalio/workflow": "^1.11.0"
+    "@temporalio/workflow": "^1.11.0",
+    "protobufjs": "^8.7.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
+    "protobufjs-cli": "^2.6.0",
     "typescript": "^5.5.0"
   }
 }
