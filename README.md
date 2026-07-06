@@ -73,9 +73,22 @@ Go, Python 3, Ruby+Bundler.
   > Why not Bedrock: on this brand-new account, both Anthropic and Nova on-demand Bedrock
   > quotas are **0 tokens/day and non-adjustable** — an account-provisioning hold that
   > isn't self-serve fixable. Once AWS lifts it, Bedrock is a drop-in alternative.
-- **SES** — the account starts in the SES *sandbox*. Verify the sender and recipient
-  email identities (SES console → Verified identities). Sandbox is fine for the POC;
-  no domain required.
+- **SES (sending)** — the account starts in the SES *sandbox*. Verify the sender and
+  recipient email identities (SES console → Verified identities). Sandbox is fine for the
+  POC; no domain required. Summaries are always emailed to the fixed verified recipient
+  (`RECIPIENT_EMAIL` on the intake deployment), regardless of who sent the audio in.
+- **SES inbound DNS (Phase 6)** — receiving audio by email needs two DNS records on the
+  `inbound_domain` (default `inbound.witski.com`), added by hand at the DNS provider
+  since that zone is not in Route 53. After `terraform apply`, run:
+  ```bash
+  terraform output inbound_dns_records   # -> the exact TXT + MX records to add
+  terraform output inbound_email_address # -> the secret address to send audio to
+  ```
+  Add the `_amazonses.<domain>` **TXT** (SES domain verification) and the `<domain>`
+  **MX** (`10 inbound-smtp.us-east-1.amazonaws.com`). Receiving is inert until they
+  propagate and SES marks the domain *verified*. The address has a random local part and
+  is intentionally kept out of this repo — any sender is accepted, so the address is the
+  only gate. See [Phase 6](#ses-inbound-email-phase-6).
 
 ## Layout
 
@@ -121,7 +134,9 @@ terraform destroy
 **Verify nothing billable lingers** (Terraform can't always catch controller-created
 resources): check the console for stray **Load Balancers**, **NAT gateways / EIPs**,
 **EBS volumes**, and **ECR images**. Bedrock model access and SES identities cost nothing
-to leave enabled.
+to leave enabled. `terraform destroy` removes the SES receipt rule set and inbound
+resources, but the **inbound DNS records** (TXT + MX) live at the external DNS provider —
+remove those by hand.
 
 ## Cost watch-list (~monthly, us-east-1, POC scale)
 
@@ -218,6 +233,36 @@ protobufjs json-module root, with `bundlerOptions.ignoreModules: ['fs']` for the
 sandbox). So every payload the pipeline moves — S3 files and Temporal payloads alike — is
 protobuf-defined.
 
+## SES inbound email (Phase 6)
+
+Get an audio recording from a phone into the pipeline with zero client: share a voice
+memo → Mail → send it to the (secret) inbound address.
+
+```
+email w/ audio ─▶ SES receiving (MX on inbound.witski.com)
+                     │ receipt rule (matches the one secret recipient)
+                     ▼
+              s3://arp-inbound-<acct>/raw/…  (raw MIME)
+                     │ s3:ObjectCreated
+                     ▼
+              inbound-parser Lambda (Python, stdlib email)
+                     │ extract first audio attachment
+                     ▼
+              s3://arp-ingest-<acct>/audio/…  ──▶ Phase 5 path (SQS → intake → workflow)
+```
+
+- Terraform: [ses-inbound.tf](infra/terraform/poc/ses-inbound.tf). Lambda source:
+  [services/inbound-parser-py](services/inbound-parser-py) (packaged via `archive_file`,
+  no build step).
+- A separate `arp-inbound-<acct>` bucket holds raw MIME (7-day lifecycle expiry) so the
+  ingest bucket's `audio/` notification stays untouched.
+- The recipient address has a random local part (Terraform `random_id`, state-only) and
+  is **not** in this repo. Any sender is accepted, so the address is the only gate.
+- Requires the TXT + MX DNS records from [Prerequisites](#prerequisites); until they
+  propagate and SES verifies the domain, inbound mail is rejected/dropped.
+- SES receiving max message size is 40 MB (fine for voice memos). Attachments must be a
+  format AWS Transcribe accepts (m4a, mp3, mp4, wav, flac, ogg, amr, webm).
+
 ## Build phases
 
 - [x] **0** — Scaffolding & Terraform remote state
@@ -226,4 +271,4 @@ protobuf-defined.
 - [x] **3** — TS workflow worker + stub activities (prove routing)
 - [x] **4** — Polyglot activity workers (Java, Go, Python, Ruby) — deployed; full pipeline verified end-to-end (audio → transcript → summary + action items → email)
 - [x] **5** — Automatic S3 intake (upload → S3 event → SQS → intake-ts starts the workflow) — verified end-to-end
-- [ ] **6** — SES inbound email (deferred / stretch)
+- [x] **6** — SES inbound email (email an audio attachment → SES receipt rule → raw MIME to `arp-inbound-<acct>` → `inbound-parser` Lambda extracts the attachment into `audio/` → the Phase 5 path runs). Gated on the two DNS records above.
