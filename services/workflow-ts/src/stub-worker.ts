@@ -23,7 +23,13 @@ async function run(): Promise<void> {
 
   const workers = await Promise.all(
     REGISTRY.map(({ taskQueue, activities }) =>
-      Worker.create({ connection, namespace, taskQueue, activities }),
+      Worker.create({
+        connection,
+        namespace,
+        taskQueue,
+        activities,
+        dataConverter: { payloadConverterPath: require.resolve('./payload-converter') },
+      }),
     ),
   );
 

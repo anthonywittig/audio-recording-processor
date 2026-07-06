@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package arp.v1;
+
+option go_package = "github.com/anthonywittig/audio-recording-processor/services/summarize-go/gen/arpv1;arpv1";
+option java_package = "com.arp.proto";
+option java_multiple_files = true;
+
+// Temporal payload DTOs: the workflow input and each activity's args/results.
+// Unlike the S3 artifacts these travel as Temporal payloads (encoded by the
+// SDKs' protobuf payload converters), not as files. Field names use proto
+// convention; the wire encoding is protobuf, not the old hand-written JSON.
+
+message ProcessAudioInput {
+  string bucket = 1;
+  string audio_key = 2;
+  string recipient_email = 3;
+}
+
+message TranscribeInput {
+  string bucket = 1;
+  string audio_key = 2;
+}
+message TranscribeResult {
+  string transcript_key = 1;
+}
+
+message SummarizeInput {
+  string bucket = 1;
+  string transcript_key = 2;
+}
+message SummarizeResult {
+  string summary_key = 1;
+}
+
+message ActionItemsInput {
+  string bucket = 1;
+  string transcript_key = 2;
+}
+message ActionItemsResult {
+  string action_items_key = 1;
+}
+
+message EmailInput {
+  string bucket = 1;
+  string transcript_key = 2;
+  string summary_key = 3;
+  string action_items_key = 4;
+  string recipient_email = 5;
+}
+message EmailResult {
+  string message_id = 1;
+}

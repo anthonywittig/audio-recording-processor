@@ -2,8 +2,8 @@ package com.arp.transcribe;
 
 import com.arp.proto.Transcript;
 import com.arp.proto.TranscriptSegment;
-import com.arp.transcribe.model.TranscribeInput;
-import com.arp.transcribe.model.TranscribeResult;
+import com.arp.proto.TranscribeInput;
+import com.arp.proto.TranscribeResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.util.JsonFormat;
@@ -38,15 +38,15 @@ public class TranscribeActivitiesImpl implements TranscribeActivities {
   @Override
   public TranscribeResult transcribeAudio(TranscribeInput input) {
     String jobName = "arp-" + UUID.randomUUID();
-    String mediaUri = "s3://" + input.bucket() + "/" + input.audioKey();
+    String mediaUri = "s3://" + input.getBucket() + "/" + input.getAudioKey();
     String rawOutputKey = "transcribe-raw/" + jobName + ".json";
 
     transcribe.startTranscriptionJob(StartTranscriptionJobRequest.builder()
         .transcriptionJobName(jobName)
         .languageCode("en-US")
-        .mediaFormat(mediaFormatFor(input.audioKey()))
+        .mediaFormat(mediaFormatFor(input.getAudioKey()))
         .media(Media.builder().mediaFileUri(mediaUri).build())
-        .outputBucketName(input.bucket())
+        .outputBucketName(input.getBucket())
         .outputKey(rawOutputKey)
         .settings(Settings.builder()
             .showSpeakerLabels(true)
@@ -73,11 +73,11 @@ public class TranscribeActivitiesImpl implements TranscribeActivities {
     }
 
     try {
-      JsonNode raw = readJson(input.bucket(), rawOutputKey);
+      JsonNode raw = readJson(input.getBucket(), rawOutputKey);
       Transcript transcript = flatten(input, raw);
-      String transcriptKey = deriveTranscriptKey(input.audioKey());
-      putProtoJson(input.bucket(), transcriptKey, transcript);
-      return new TranscribeResult(transcriptKey);
+      String transcriptKey = deriveTranscriptKey(input.getAudioKey());
+      putProtoJson(input.getBucket(), transcriptKey, transcript);
+      return TranscribeResult.newBuilder().setTranscriptKey(transcriptKey).build();
     } catch (Exception e) {
       throw Activity.wrap(e);
     }
@@ -101,7 +101,7 @@ public class TranscribeActivitiesImpl implements TranscribeActivities {
     }
 
     Transcript.Builder transcript = Transcript.newBuilder()
-        .setAudioKey(input.audioKey())
+        .setAudioKey(input.getAudioKey())
         .setLanguage("en-US")
         .setText(text);
 
