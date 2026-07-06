@@ -4,7 +4,7 @@ metadata:
   name: intake-ts
   namespace: arp
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::977924542119:role/arp-intake
+    eks.amazonaws.com/role-arn: arn:aws:iam::${AWS_ACCOUNT_ID}:role/arp-intake
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -26,7 +26,7 @@ spec:
       serviceAccountName: intake-ts
       containers:
         - name: intake-ts
-          image: 977924542119.dkr.ecr.us-east-1.amazonaws.com/arp/intake-ts:latest
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/arp/intake-ts:latest
           imagePullPolicy: Always
           env:
             - name: TEMPORAL_ADDRESS
@@ -34,11 +34,11 @@ spec:
             - name: TEMPORAL_NAMESPACE
               value: default
             - name: INTAKE_QUEUE_URL
-              value: https://sqs.us-east-1.amazonaws.com/977924542119/arp-intake
+              value: https://sqs.${AWS_REGION}.amazonaws.com/${AWS_ACCOUNT_ID}/arp-intake
             - name: RECIPIENT_EMAIL
               value: anthony.wittig@gmail.com
             - name: AWS_REGION
-              value: us-east-1
+              value: ${AWS_REGION}
           resources:
             requests:
               cpu: 50m

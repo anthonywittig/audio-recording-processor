@@ -2,6 +2,11 @@ output "region" {
   value = var.region
 }
 
+output "account_id" {
+  description = "AWS account ID. Consumed by k8s/apply.sh to render the worker manifests so the ID is never committed."
+  value       = data.aws_caller_identity.current.account_id
+}
+
 output "cluster_name" {
   value = module.eks.cluster_name
 }

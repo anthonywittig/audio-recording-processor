@@ -54,6 +54,11 @@ venv/
 .bundle/
 vendor/bundle/
 
+# ---- k8s local config ----
+# Local override for k8s/apply.sh (account id / region). Not secret, but kept
+# out of the repo so manifests stay account/region-portable. See config.env.example.
+k8s/config.env
+
 # ---- Editor / OS ----
 .DS_Store
 .idea/

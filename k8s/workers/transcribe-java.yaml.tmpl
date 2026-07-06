@@ -1,38 +1,40 @@
-# The workflow worker hosts the processAudio workflow and polls the `workflow`
-# task queue. It talks only to Temporal (no AWS), so no IRSA role is needed.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: workflow-ts
+  name: transcribe-java
   namespace: arp
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::${AWS_ACCOUNT_ID}:role/arp-transcribe
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: workflow-ts
+  name: transcribe-java
   namespace: arp
   labels:
-    app: workflow-ts
+    app: transcribe-java
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: workflow-ts
+      app: transcribe-java
   template:
     metadata:
       labels:
-        app: workflow-ts
+        app: transcribe-java
     spec:
-      serviceAccountName: workflow-ts
+      serviceAccountName: transcribe-java
       containers:
-        - name: workflow-ts
-          image: 977924542119.dkr.ecr.us-east-1.amazonaws.com/arp/workflow-ts:latest
+        - name: transcribe-java
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/arp/transcribe-java:latest
           imagePullPolicy: Always
           env:
             - name: TEMPORAL_ADDRESS
               value: temporal-frontend.temporal.svc:7233
             - name: TEMPORAL_NAMESPACE
               value: default
+            - name: AWS_REGION
+              value: ${AWS_REGION}
           resources:
             requests:
               cpu: 100m
