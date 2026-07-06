@@ -1,9 +1,10 @@
-require 'json'
 require 'aws-sdk-s3'
 require 'aws-sdk-sesv2'
 require 'temporalio/activity'
 
 require_relative 'transcript_pb'
+require_relative 'summary_pb'
+require_relative 'action_items_pb'
 
 # Composes and sends the summary email via SES. Singleton so the SES/S3 clients
 # and sender config are created once and reused across activity executions.
@@ -24,8 +25,8 @@ class Emailer
   # services/workflow-ts/src/shared.ts.
   def send_email(input)
     bucket = input['bucket']
-    summary = read_json(bucket, input['summaryKey'])['summary'].to_s
-    action_items = read_json(bucket, input['actionItemsKey'])['actionItems'] || []
+    summary = read_summary(bucket, input['summaryKey'])
+    action_items = read_action_items(bucket, input['actionItemsKey'])
     transcript = read_transcript_text(bucket, input['transcriptKey'])
     recipient = input['recipientEmail']
 
@@ -44,9 +45,16 @@ class Emailer
 
   private
 
-  def read_json(bucket, key)
-    obj = @s3.get_object(bucket: bucket, key: key)
-    JSON.parse(obj.body.read)
+  # All three artifacts are proto-JSON (proto/*.proto); parse each into its
+  # generated Ruby type. ignore_unknown_fields keeps us forward-compatible.
+  def read_summary(bucket, key)
+    json = @s3.get_object(bucket: bucket, key: key).body.read
+    Arp::V1::Summary.decode_json(json, ignore_unknown_fields: true).summary
+  end
+
+  def read_action_items(bucket, key)
+    json = @s3.get_object(bucket: bucket, key: key).body.read
+    Arp::V1::ActionItems.decode_json(json, ignore_unknown_fields: true).action_items.to_a
   end
 
   # The transcript is proto-JSON (proto/transcript.proto); parse it into the

@@ -4,31 +4,38 @@
 #   (go install google.golang.org/protobuf/cmd/protoc-gen-go@latest).
 # Generated code is committed, so service builds don't need protoc. Re-run this
 # whenever a .proto changes.
+#
+# Each artifact is generated only for the languages that read or write it:
+#   transcript    Java (write) + Go, Python, Ruby (read)
+#   summary       Go (write)   + Ruby (read)
+#   action_items  Python (write) + Ruby (read)
 set -euo pipefail
 cd "$(dirname "$0")/.." # repo root
 export PATH="$PATH:$(go env GOPATH)/bin"
 
-PROTO=proto/transcript.proto
+GO_OUT="services/summarize-go"
+GO_MOD="github.com/anthonywittig/audio-recording-processor/services/summarize-go"
+JAVA_OUT="services/transcribe-java/src/main/java"
+PY_OUT="services/action-items-py"
+RUBY_OUT="services/email-ruby"
 
-# Go -> summarize-go (module option strips the prefix; go_package places it in gen/arpv1)
-protoc --proto_path=proto \
-  --go_out=services/summarize-go \
-  --go_opt=module=github.com/anthonywittig/audio-recording-processor/services/summarize-go \
-  "$PROTO"
+go_gen()   { protoc --proto_path=proto --go_out="$GO_OUT" --go_opt=module="$GO_MOD" "proto/$1"; }
+java_gen() { protoc --proto_path=proto --java_out="$JAVA_OUT" "proto/$1"; }
+py_gen()   { protoc --proto_path=proto --python_out="$PY_OUT" "proto/$1"; }
+ruby_gen() { protoc --proto_path=proto --ruby_out="$RUBY_OUT" "proto/$1"; }
 
-# Java -> transcribe-java (java_package/java_multiple_files set in the proto)
-protoc --proto_path=proto \
-  --java_out=services/transcribe-java/src/main/java \
-  "$PROTO"
+# transcript
+java_gen transcript.proto
+go_gen   transcript.proto
+py_gen   transcript.proto
+ruby_gen transcript.proto
 
-# Python -> action-items-py
-protoc --proto_path=proto \
-  --python_out=services/action-items-py \
-  "$PROTO"
+# summary
+go_gen   summary.proto
+ruby_gen summary.proto
 
-# Ruby -> email-ruby (Ruby generator is built into protoc)
-protoc --proto_path=proto \
-  --ruby_out=services/email-ruby \
-  "$PROTO"
+# action_items
+py_gen   action_items.proto
+ruby_gen action_items.proto
 
 echo "generated."

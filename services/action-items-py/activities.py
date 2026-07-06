@@ -15,6 +15,7 @@ import requests
 from google.protobuf import json_format
 from temporalio import activity
 
+import action_items_pb2
 import transcript_pb2
 
 
@@ -62,7 +63,7 @@ class ActionItemsActivities:
         text = self._read_transcript_text(input.bucket, input.transcriptKey)
         items = self.extract_items(text)
         key = _derive_key(input.transcriptKey)
-        self._put_json(input.bucket, key, {"actionItems": items})
+        self._put_proto_json(input.bucket, key, action_items_pb2.ActionItems(action_items=items))
         return ActionItemsResult(actionItemsKey=key)
 
     def extract_items(self, transcript_text: str) -> list:
@@ -113,11 +114,14 @@ class ActionItemsActivities:
         )
         return transcript.text
 
-    def _put_json(self, bucket: str, key: str, value: dict) -> None:
+    def _put_proto_json(self, bucket: str, key: str, message) -> None:
+        payload = json_format.MessageToJson(
+            message, always_print_fields_with_no_presence=True
+        )
         self._s3.put_object(
             Bucket=bucket,
             Key=key,
-            Body=json.dumps(value).encode("utf-8"),
+            Body=payload.encode("utf-8"),
             ContentType="application/json",
         )
 

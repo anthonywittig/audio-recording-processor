@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package arp.v1;
+
+option go_package = "github.com/anthonywittig/audio-recording-processor/services/summarize-go/gen/arpv1;arpv1";
+option java_package = "com.arp.proto";
+option java_multiple_files = true;
+
+// Action items extracted from a transcript: written by action-items-py, read by
+// email-ruby. Stored in S3 as proto-JSON (=> {"actionItems": ["...", ...]}).
+message ActionItems {
+  repeated string action_items = 1;
+}
