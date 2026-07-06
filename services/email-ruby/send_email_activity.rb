@@ -3,6 +3,8 @@ require 'aws-sdk-s3'
 require 'aws-sdk-sesv2'
 require 'temporalio/activity'
 
+require_relative 'transcript_pb'
+
 # Composes and sends the summary email via SES. Singleton so the SES/S3 clients
 # and sender config are created once and reused across activity executions.
 class Emailer
@@ -24,6 +26,7 @@ class Emailer
     bucket = input['bucket']
     summary = read_json(bucket, input['summaryKey'])['summary'].to_s
     action_items = read_json(bucket, input['actionItemsKey'])['actionItems'] || []
+    transcript = read_transcript_text(bucket, input['transcriptKey'])
     recipient = input['recipientEmail']
 
     resp = @ses.send_email(
@@ -32,7 +35,7 @@ class Emailer
       content: {
         simple: {
           subject: { data: 'Your meeting summary and action items' },
-          body: { text: { data: build_body(summary, action_items) } }
+          body: { text: { data: build_body(summary, action_items, transcript) } }
         }
       }
     )
@@ -46,7 +49,15 @@ class Emailer
     JSON.parse(obj.body.read)
   end
 
-  def build_body(summary, action_items)
+  # The transcript is proto-JSON (proto/transcript.proto); parse it into the
+  # generated Ruby type and return the full text. ignore_unknown_fields keeps us
+  # forward-compatible if new fields are added upstream.
+  def read_transcript_text(bucket, key)
+    json = @s3.get_object(bucket: bucket, key: key).body.read
+    Arp::V1::Transcript.decode_json(json, ignore_unknown_fields: true).text
+  end
+
+  def build_body(summary, action_items, transcript)
     lines = []
     lines << 'SUMMARY'
     lines << '======='
@@ -61,6 +72,10 @@ class Emailer
         lines << "#{i + 1}. #{item}"
       end
     end
+    lines << ''
+    lines << 'TRANSCRIPT'
+    lines << '=========='
+    lines << transcript
     lines.join("\n")
   end
 end
