@@ -48,7 +48,7 @@ Activities pass **S3 keys**, not payloads, to stay under Temporal's message-size
 Install locally (macOS):
 
 ```bash
-brew install terraform awscli kubernetes-cli helm
+brew install terraform awscli kubernetes-cli helm gettext
 brew install --cask docker      # or: brew install colima docker  (lighter)
 aws configure                   # credentials + default region us-east-1
 ```
@@ -185,13 +185,24 @@ Deployment whose ServiceAccount is IRSA-bound to a least-privilege role. The
 summarize (Go) worker is the reference:
 
 ```bash
-ECR=977924542119.dkr.ecr.us-east-1.amazonaws.com
+ECR=$(terraform -chdir=infra/terraform/poc output -raw account_id).dkr.ecr.us-east-1.amazonaws.com
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR
 # IMPORTANT: nodes are amd64; build for that platform or the pod crashes (exec format error)
 docker build --platform linux/amd64 -t $ECR/arp/summarize-go:latest services/summarize-go
 docker push $ECR/arp/summarize-go:latest
-kubectl apply -f k8s/workers/summarize-go.yaml
 ```
+
+The manifests live in `k8s/workers/*.yaml.tmpl` (templates, so no AWS account ID
+is committed). Render and apply them all — namespace first — with:
+
+```bash
+./k8s/apply.sh
+```
+
+`apply.sh` fills `${AWS_ACCOUNT_ID}` / `${AWS_REGION}` from `terraform output`
+(the single source of truth), or from a gitignored `k8s/config.env` if you'd
+rather not hit Terraform (copy `k8s/config.env.example`). Requires `envsubst`
+(`brew install gettext`).
 
 - Workers run in the `arp` namespace and reach Temporal at
   `temporal-frontend.temporal.svc:7233` (cross-namespace, frontend stays internal).
