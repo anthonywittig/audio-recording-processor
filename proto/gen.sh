@@ -26,4 +26,9 @@ protoc --proto_path=proto \
   --python_out=services/action-items-py \
   "$PROTO"
 
+# Ruby -> email-ruby (Ruby generator is built into protoc)
+protoc --proto_path=proto \
+  --ruby_out=services/email-ruby \
+  "$PROTO"
+
 echo "generated."

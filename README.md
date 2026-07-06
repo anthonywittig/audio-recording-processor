@@ -188,9 +188,9 @@ kubectl apply -f k8s/workers/summarize-go.yaml
 
 ## Shared transcript schema (protobuf)
 
-The normalized transcript — written by the Java worker, read by the Go and Python
-workers — is defined once in [proto/transcript.proto](proto/transcript.proto) and
-generated per-language. It's stored in S3 as **proto-JSON** (proto3's canonical JSON
+The normalized transcript — written by the Java worker, read by the Go, Python, and
+Ruby workers (Ruby appends it to the email) — is defined once in
+[proto/transcript.proto](proto/transcript.proto) and generated per-language. It's stored in S3 as **proto-JSON** (proto3's canonical JSON
 mapping), so the file stays human-readable while the `.proto` is the single source of
 truth for the shape. Writers use "always print fields" and readers ignore unknown fields
 so all three languages agree byte-for-byte.
