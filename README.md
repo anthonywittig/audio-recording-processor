@@ -186,14 +186,20 @@ kubectl apply -f k8s/workers/summarize-go.yaml
 - Verify a worker is polling: `kubectl exec -n temporal deploy/temporal-admintools --
   temporal task-queue describe --address temporal-frontend:7233 -n default --task-queue summarize`.
 
-## Shared transcript schema (protobuf)
+## Shared S3 schemas (protobuf)
 
-The normalized transcript — written by the Java worker, read by the Go, Python, and
-Ruby workers (Ruby appends it to the email) — is defined once in
-[proto/transcript.proto](proto/transcript.proto) and generated per-language. It's stored in S3 as **proto-JSON** (proto3's canonical JSON
-mapping), so the file stays human-readable while the `.proto` is the single source of
-truth for the shape. Writers use "always print fields" and readers ignore unknown fields
-so all three languages agree byte-for-byte.
+Every S3 artifact the pipeline produces is defined once in [proto/](proto/) and stored as
+**proto-JSON** (proto3's canonical JSON mapping) — human-readable files, single source of
+truth for each shape, generated per-language:
+
+| Artifact | proto | Writer | Readers |
+|----------|-------|--------|---------|
+| transcript | `transcript.proto` | Java | Go, Python, Ruby |
+| summary | `summary.proto` | Go | Ruby |
+| action items | `action_items.proto` | Python | Ruby |
+
+Writers use "always print fields" and readers ignore unknown fields so the languages agree
+byte-for-byte. (`transcribe-raw/` objects are AWS Transcribe's own output, not ours.)
 
 Generated code is committed (builds don't need `protoc`). Regenerate after editing the
 proto:

@@ -100,7 +100,7 @@ func (a *activities) SummarizeTranscript(ctx context.Context, in SummarizeInput)
 	}
 
 	summaryKey := deriveSummaryKey(in.TranscriptKey)
-	body, err := json.Marshal(map[string]string{"summary": summary})
+	body, err := protojson.MarshalOptions{EmitDefaultValues: true}.Marshal(&arpv1.Summary{Summary: summary})
 	if err != nil {
 		return SummarizeResult{}, fmt.Errorf("marshal summary: %w", err)
 	}
