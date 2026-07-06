@@ -8,7 +8,6 @@ function name, and camelCase alignment across languages matters).
 
 import json
 import os
-from dataclasses import dataclass
 
 import boto3
 import requests
@@ -16,20 +15,12 @@ from google.protobuf import json_format
 from temporalio import activity
 
 import action_items_pb2
+import dtos_pb2
 import transcript_pb2
 
-
-# Input/output shapes mirror services/workflow-ts/src/shared.ts. Dataclass field
-# names are the cross-language JSON contract, so they must match exactly.
-@dataclass
-class ActionItemsInput:
-    bucket: str
-    transcriptKey: str
-
-
-@dataclass
-class ActionItemsResult:
-    actionItemsKey: str
+# Activity args/results are protobuf Temporal-payload DTOs (proto/dtos.proto);
+# the Python SDK's default converter decodes into / encodes from the message
+# type on the activity's type hints.
 
 
 def _region():
@@ -59,12 +50,12 @@ class ActionItemsActivities:
         self._s3 = boto3.client("s3", region_name=_region())
 
     @activity.defn(name="extractActionItems")
-    def extract_action_items(self, input: ActionItemsInput) -> ActionItemsResult:
-        text = self._read_transcript_text(input.bucket, input.transcriptKey)
+    def extract_action_items(self, input: dtos_pb2.ActionItemsInput) -> dtos_pb2.ActionItemsResult:
+        text = self._read_transcript_text(input.bucket, input.transcript_key)
         items = self.extract_items(text)
-        key = _derive_key(input.transcriptKey)
+        key = _derive_key(input.transcript_key)
         self._put_proto_json(input.bucket, key, action_items_pb2.ActionItems(action_items=items))
-        return ActionItemsResult(actionItemsKey=key)
+        return dtos_pb2.ActionItemsResult(action_items_key=key)
 
     def extract_items(self, transcript_text: str) -> list:
         """Call OpenAI and return a list of action-item strings. Kept separate

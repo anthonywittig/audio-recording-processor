@@ -210,8 +210,13 @@ go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 bash proto/gen.sh
 ```
 
-The remaining cross-language shapes (the small Temporal activity DTOs) are still
-hand-maintained JSON — see task tracking / [shared.ts](services/workflow-ts/src/shared.ts).
+The **Temporal-payload DTOs** (the workflow input + every activity's args/results) are
+also protobuf, defined in [proto/dtos.proto](proto/dtos.proto). Backend workers
+(Java/Go/Python/Ruby) use their SDK's built-in protobuf payload converter; `workflow-ts`
+and `intake-ts` use a custom converter (`DefaultPayloadConverterWithProtobufs` over a
+protobufjs json-module root, with `bundlerOptions.ignoreModules: ['fs']` for the workflow
+sandbox). So every payload the pipeline moves — S3 files and Temporal payloads alike — is
+protobuf-defined.
 
 ## Build phases
 

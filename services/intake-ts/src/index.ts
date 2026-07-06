@@ -4,6 +4,10 @@ import {
   ReceiveMessageCommand,
   DeleteMessageCommand,
 } from '@aws-sdk/client-sqs';
+import type { Root } from 'protobufjs';
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const root = require('./proto/root') as unknown as Root;
 
 // Task queue + workflow type must match the TS workflow worker
 // (services/workflow-ts). Starting by type name avoids bundling workflow code.
@@ -26,7 +30,11 @@ async function main(): Promise<void> {
 
   const sqs = new SQSClient({});
   const connection = await Connection.connect({ address });
-  const client = new Client({ connection, namespace });
+  const client = new Client({
+    connection,
+    namespace,
+    dataConverter: { payloadConverterPath: require.resolve('./payload-converter') },
+  });
 
   let running = true;
   const stop = () => {
@@ -85,10 +93,13 @@ async function handleBody(client: Client, recipient: string, body: string): Prom
     );
 
     try {
+      const input = root
+        .lookupType('arp.v1.ProcessAudioInput')
+        .create({ bucket, audioKey, recipientEmail: recipient });
       await client.workflow.start(WORKFLOW_TYPE, {
         taskQueue: TASK_QUEUE,
         workflowId,
-        args: [{ bucket, audioKey, recipientEmail: recipient }],
+        args: [input],
       });
       console.log(`started ${workflowId} for s3://${bucket}/${audioKey}`);
     } catch (err) {

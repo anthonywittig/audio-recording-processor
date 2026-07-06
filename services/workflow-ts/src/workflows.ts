@@ -1,11 +1,6 @@
 import { proxyActivities } from '@temporalio/workflow';
 import type { Root } from 'protobufjs';
-import {
-  TASK_QUEUES,
-  type Activities,
-  type ProcessAudioInput,
-  type EmailResult,
-} from './shared';
+import { TASK_QUEUES, type ProcessAudioInput, type EmailResult } from './shared';
 
 // protobufjs root for constructing Temporal payload DTOs. Bundled into the
 // workflow (same root the converter uses). Constructing a message is
@@ -18,9 +13,9 @@ const root = require('./proto/root') as unknown as Root;
 // long-running (async AWS Transcribe job) so it gets a generous timeout and a
 // heartbeat; the rest are quick request/response calls.
 
-// transcribe uses protobuf DTOs end-to-end: we send an arp.v1.TranscribeInput
-// message and receive an arp.v1.TranscribeResult (decoded to a message with a
-// transcriptKey field). The other activities still use JSON (converter fallback).
+// Every activity uses protobuf DTOs end-to-end: we send an arp.v1.*Input message
+// and receive an arp.v1.*Result (decoded by the converter to a message whose
+// camelCase fields we read below).
 const { transcribeAudio } = proxyActivities<{
   transcribeAudio(input: unknown): Promise<{ transcriptKey: string }>;
 }>({
@@ -30,19 +25,25 @@ const { transcribeAudio } = proxyActivities<{
   retry: { maximumAttempts: 3 },
 });
 
-const { summarizeTranscript } = proxyActivities<Pick<Activities, 'summarizeTranscript'>>({
+const { summarizeTranscript } = proxyActivities<{
+  summarizeTranscript(input: unknown): Promise<{ summaryKey: string }>;
+}>({
   taskQueue: TASK_QUEUES.summarize,
   startToCloseTimeout: '5 minutes',
   retry: { maximumAttempts: 3 },
 });
 
-const { extractActionItems } = proxyActivities<Pick<Activities, 'extractActionItems'>>({
+const { extractActionItems } = proxyActivities<{
+  extractActionItems(input: unknown): Promise<{ actionItemsKey: string }>;
+}>({
   taskQueue: TASK_QUEUES.actionItems,
   startToCloseTimeout: '5 minutes',
   retry: { maximumAttempts: 3 },
 });
 
-const { sendEmail } = proxyActivities<Pick<Activities, 'sendEmail'>>({
+const { sendEmail } = proxyActivities<{
+  sendEmail(input: unknown): Promise<{ messageId: string }>;
+}>({
   taskQueue: TASK_QUEUES.email,
   startToCloseTimeout: '2 minutes',
   retry: { maximumAttempts: 3 },
@@ -62,15 +63,21 @@ export async function processAudio(input: ProcessAudioInput): Promise<EmailResul
   const { transcriptKey } = await transcribeAudio(transcribeInput);
 
   const [summary, actionItems] = await Promise.all([
-    summarizeTranscript({ bucket: input.bucket, transcriptKey }),
-    extractActionItems({ bucket: input.bucket, transcriptKey }),
+    summarizeTranscript(
+      root.lookupType('arp.v1.SummarizeInput').create({ bucket: input.bucket, transcriptKey }),
+    ),
+    extractActionItems(
+      root.lookupType('arp.v1.ActionItemsInput').create({ bucket: input.bucket, transcriptKey }),
+    ),
   ]);
 
-  return await sendEmail({
-    bucket: input.bucket,
-    transcriptKey,
-    summaryKey: summary.summaryKey,
-    actionItemsKey: actionItems.actionItemsKey,
-    recipientEmail: input.recipientEmail,
-  });
+  return await sendEmail(
+    root.lookupType('arp.v1.EmailInput').create({
+      bucket: input.bucket,
+      transcriptKey,
+      summaryKey: summary.summaryKey,
+      actionItemsKey: actionItems.actionItemsKey,
+      recipientEmail: input.recipientEmail,
+    }),
+  );
 }
