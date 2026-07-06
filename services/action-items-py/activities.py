@@ -12,7 +12,10 @@ from dataclasses import dataclass
 
 import boto3
 import requests
+from google.protobuf import json_format
 from temporalio import activity
+
+import transcript_pb2
 
 
 # Input/output shapes mirror services/workflow-ts/src/shared.ts. Dataclass field
@@ -56,8 +59,8 @@ class ActionItemsActivities:
 
     @activity.defn(name="extractActionItems")
     def extract_action_items(self, input: ActionItemsInput) -> ActionItemsResult:
-        transcript = self._read_transcript(input.bucket, input.transcriptKey)
-        items = self.extract_items(transcript.get("text", ""))
+        text = self._read_transcript_text(input.bucket, input.transcriptKey)
+        items = self.extract_items(text)
         key = _derive_key(input.transcriptKey)
         self._put_json(input.bucket, key, {"actionItems": items})
         return ActionItemsResult(actionItemsKey=key)
@@ -98,9 +101,17 @@ class ActionItemsActivities:
         items = parsed.get("actionItems", [])
         return [str(i) for i in items]
 
-    def _read_transcript(self, bucket: str, key: str) -> dict:
+    def _read_transcript_text(self, bucket: str, key: str) -> str:
+        # The transcript is proto-JSON (proto/transcript.proto); parse it into
+        # the generated Transcript message. ignore_unknown_fields keeps us
+        # forward-compatible if new fields are added upstream.
         obj = self._s3.get_object(Bucket=bucket, Key=key)
-        return json.loads(obj["Body"].read())
+        transcript = json_format.Parse(
+            obj["Body"].read().decode("utf-8"),
+            transcript_pb2.Transcript(),
+            ignore_unknown_fields=True,
+        )
+        return transcript.text
 
     def _put_json(self, bucket: str, key: str, value: dict) -> None:
         self._s3.put_object(

@@ -15,6 +15,9 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"google.golang.org/protobuf/encoding/protojson"
+
+	arpv1 "github.com/anthonywittig/audio-recording-processor/services/summarize-go/gen/arpv1"
 )
 
 // SummarizeInput / SummarizeResult mirror the shapes in
@@ -29,21 +32,9 @@ type SummarizeResult struct {
 	SummaryKey string `json:"summaryKey"`
 }
 
-// Transcript is the normalized shape written by the Java transcribe worker.
-// Only Text is needed here, but the full shape is documented for clarity.
-type Transcript struct {
-	AudioKey string              `json:"audioKey"`
-	Language string              `json:"language"`
-	Text     string              `json:"text"`
-	Segments []TranscriptSegment `json:"segments"`
-}
-
-type TranscriptSegment struct {
-	Speaker   string  `json:"speaker"`
-	StartTime float64 `json:"startTime"`
-	EndTime   float64 `json:"endTime"`
-	Text      string  `json:"text"`
-}
+// The transcript shape is defined once in proto/transcript.proto and generated
+// into gen/arpv1. The Java worker writes it to S3 as proto-JSON; here we parse
+// that JSON into the generated arpv1.Transcript.
 
 type activities struct {
 	s3      *s3.Client
@@ -98,12 +89,12 @@ func resolveAPIKey(ctx context.Context, cfg aws.Config) (string, error) {
 // SummarizeTranscript reads the transcript from S3, summarizes it with OpenAI,
 // and writes the summary JSON back to S3, returning the new key.
 func (a *activities) SummarizeTranscript(ctx context.Context, in SummarizeInput) (SummarizeResult, error) {
-	transcript, err := a.readTranscript(ctx, in.Bucket, in.TranscriptKey)
+	text, err := a.readTranscriptText(ctx, in.Bucket, in.TranscriptKey)
 	if err != nil {
 		return SummarizeResult{}, err
 	}
 
-	summary, err := a.summarize(ctx, transcript.Text)
+	summary, err := a.summarize(ctx, text)
 	if err != nil {
 		return SummarizeResult{}, err
 	}
@@ -125,18 +116,24 @@ func (a *activities) SummarizeTranscript(ctx context.Context, in SummarizeInput)
 	return SummarizeResult{SummaryKey: summaryKey}, nil
 }
 
-func (a *activities) readTranscript(ctx context.Context, bucket, key string) (Transcript, error) {
+func (a *activities) readTranscriptText(ctx context.Context, bucket, key string) (string, error) {
 	obj, err := a.s3.GetObject(ctx, &s3.GetObjectInput{Bucket: &bucket, Key: &key})
 	if err != nil {
-		return Transcript{}, fmt.Errorf("get transcript %s: %w", key, err)
+		return "", fmt.Errorf("get transcript %s: %w", key, err)
 	}
 	defer obj.Body.Close()
 
-	var t Transcript
-	if err := json.NewDecoder(obj.Body).Decode(&t); err != nil {
-		return Transcript{}, fmt.Errorf("decode transcript %s: %w", key, err)
+	data, err := io.ReadAll(obj.Body)
+	if err != nil {
+		return "", fmt.Errorf("read transcript %s: %w", key, err)
 	}
-	return t, nil
+
+	var t arpv1.Transcript
+	// DiscardUnknown keeps us forward-compatible if new fields are added upstream.
+	if err := (protojson.UnmarshalOptions{DiscardUnknown: true}).Unmarshal(data, &t); err != nil {
+		return "", fmt.Errorf("decode transcript %s: %w", key, err)
+	}
+	return t.GetText(), nil
 }
 
 // ---- OpenAI Chat Completions ----

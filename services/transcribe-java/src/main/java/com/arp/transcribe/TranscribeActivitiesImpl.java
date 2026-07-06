@@ -1,11 +1,12 @@
 package com.arp.transcribe;
 
+import com.arp.proto.Transcript;
+import com.arp.proto.TranscriptSegment;
 import com.arp.transcribe.model.TranscribeInput;
 import com.arp.transcribe.model.TranscribeResult;
-import com.arp.transcribe.model.Transcript;
-import com.arp.transcribe.model.TranscriptSegment;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.util.JsonFormat;
 import io.temporal.activity.Activity;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -21,9 +22,7 @@ import software.amazon.awssdk.services.transcribe.model.StartTranscriptionJobReq
 import software.amazon.awssdk.services.transcribe.model.TranscriptionJob;
 import software.amazon.awssdk.services.transcribe.model.TranscriptionJobStatus;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -77,7 +76,7 @@ public class TranscribeActivitiesImpl implements TranscribeActivities {
       JsonNode raw = readJson(input.bucket(), rawOutputKey);
       Transcript transcript = flatten(input, raw);
       String transcriptKey = deriveTranscriptKey(input.audioKey());
-      putJson(input.bucket(), transcriptKey, transcript);
+      putProtoJson(input.bucket(), transcriptKey, transcript);
       return new TranscribeResult(transcriptKey);
     } catch (Exception e) {
       throw Activity.wrap(e);
@@ -101,7 +100,11 @@ public class TranscribeActivitiesImpl implements TranscribeActivities {
       }
     }
 
-    List<TranscriptSegment> segments = new ArrayList<>();
+    Transcript.Builder transcript = Transcript.newBuilder()
+        .setAudioKey(input.audioKey())
+        .setLanguage("en-US")
+        .setText(text);
+
     for (JsonNode seg : results.path("speaker_labels").path("segments")) {
       String speaker = seg.path("speaker_label").asText();
       double start = seg.path("start_time").asDouble();
@@ -117,10 +120,15 @@ public class TranscribeActivitiesImpl implements TranscribeActivities {
           sb.append(word);
         }
       }
-      segments.add(new TranscriptSegment(speaker, start, end, sb.toString()));
+      transcript.addSegments(TranscriptSegment.newBuilder()
+          .setSpeaker(speaker)
+          .setStartTime(start)
+          .setEndTime(end)
+          .setText(sb.toString())
+          .build());
     }
 
-    return new Transcript(input.audioKey(), "en-US", text, segments);
+    return transcript.build();
   }
 
   private JsonNode readJson(String bucket, String key) throws Exception {
@@ -129,11 +137,14 @@ public class TranscribeActivitiesImpl implements TranscribeActivities {
     return mapper.readTree(bytes.asByteArray());
   }
 
-  private void putJson(String bucket, String key, Object value) throws Exception {
-    byte[] data = mapper.writeValueAsBytes(value);
+  // Write the transcript to S3 as proto-JSON. alwaysPrintFieldsWithNoPresence
+  // keeps default-valued fields in the output so the JSON matches across
+  // languages (Go/Python read it back into the same generated type).
+  private void putProtoJson(String bucket, String key, com.google.protobuf.Message message) throws Exception {
+    String json = JsonFormat.printer().alwaysPrintFieldsWithNoPresence().print(message);
     s3.putObject(
         PutObjectRequest.builder().bucket(bucket).key(key).contentType("application/json").build(),
-        RequestBody.fromBytes(data));
+        RequestBody.fromString(json));
   }
 
   // deriveTranscriptKey maps audio/<name> -> transcripts/<name>.json.

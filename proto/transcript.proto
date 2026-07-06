@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package arp.v1;
+
+option go_package = "github.com/anthonywittig/audio-recording-processor/services/summarize-go/gen/arpv1;arpv1";
+option java_package = "com.arp.proto";
+option java_multiple_files = true;
+
+// Normalized transcript: written by the transcribe worker (Java) and read by the
+// summarize (Go) and action-items (Python) workers. It is stored in S3 as
+// proto-JSON, so the on-disk file stays human-readable JSON while this .proto is
+// the single source of truth for the shape across the three languages.
+//
+// proto-JSON maps snake_case fields to lowerCamelCase JSON keys, so this emits
+// {"audioKey":..., "startTime":...} — identical to the previous hand-written
+// schema. Workers must marshal with default-value emission enabled and parse
+// with unknown fields ignored so all three languages agree byte-for-byte.
+message Transcript {
+  string audio_key = 1;
+  string language = 2;
+  string text = 3;
+  repeated TranscriptSegment segments = 4;
+}
+
+message TranscriptSegment {
+  string speaker = 1;
+  double start_time = 2;
+  double end_time = 3;
+  string text = 4;
+}
