@@ -32,6 +32,7 @@ async def main() -> None:
             task_queue=TASK_QUEUE,
             activities=[activities.extract_action_items],
             activity_executor=executor,
+            max_concurrent_activities=10,
         )
         print(f"action-items worker started: address={address} namespace={namespace} queue={TASK_QUEUE}")
         await worker.run()
