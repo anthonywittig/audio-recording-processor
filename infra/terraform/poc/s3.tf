@@ -17,6 +17,23 @@ resource "aws_s3_bucket_public_access_block" "ingest" {
   restrict_public_buckets = true
 }
 
+# The web app (infra/terraform/web) uploads and downloads directly against this
+# bucket from the browser using presigned URLs — CORS just permits the
+# cross-origin call; the presigned URL itself is the access control. The
+# allowed origin can't be pinned to the CloudFront domain without coupling the
+# two stacks, so it stays "*".
+resource "aws_s3_bucket_cors_configuration" "ingest" {
+  bucket = aws_s3_bucket.ingest.id
+
+  cors_rule {
+    allowed_methods = ["GET", "PUT", "HEAD"]
+    allowed_origins = ["*"]
+    allowed_headers = ["*"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3600
+  }
+}
+
 output "ingest_bucket" {
   description = "S3 bucket for audio uploads and pipeline outputs."
   value       = aws_s3_bucket.ingest.bucket
