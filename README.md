@@ -96,6 +96,7 @@ Go, Python 3, Ruby+Bundler.
 infra/terraform/
   bootstrap/   # creates the S3 remote-state bucket (run once, local state)
   poc/         # the actual stack: VPC, EKS, RDS, ECR, Temporal, workers
+  web/         # persistent web app stack: CloudFront + S3 site, API GW + Lambda
 k8s/           # Helm values + worker manifests
 services/      # one directory per worker (workflow-ts, transcribe-java, ...)
 ```
@@ -127,7 +128,11 @@ and the workers via `./k8s/apply.sh` ([Deploying a worker](#deploying-a-worker-p
 cd infra/terraform/poc
 terraform destroy
 
-# then the state bucket (only when you're completely done):
+# The web app stack (infra/terraform/web) is intentionally PERSISTENT — it costs
+# pennies idle and keeps a stable CloudFront URL across nightly poc teardowns.
+# Destroy it (and then the state bucket) only when you're completely done:
+cd ../web
+terraform destroy
 cd ../bootstrap
 terraform destroy
 ```
@@ -148,6 +153,7 @@ remove those by hand.
 | RDS db.t4g.micro | ~$12 |
 | **NAT gateway (single)** | **~$32** ← biggest avoidable |
 | ECR / S3 / SQS / Lambda / Transcribe / SES / OpenAI | pennies at POC volume |
+| Web app stack (CloudFront + S3 + API GW + Lambda) | pennies idle — left standing |
 
 ## Temporal server (Phase 2)
 
@@ -295,6 +301,49 @@ email w/ audio ─▶ SES receiving (MX on inbound.witski.com)
 - SES receiving max message size is 40 MB (fine for voice memos). Attachments must be a
   format AWS Transcribe accepts (m4a, mp3, mp4, wav, flac, ogg, amr, webm).
 
+## Web app (Phase 7)
+
+Record audio in the browser (phone or desktop) and watch the pipeline results
+appear — no email round-trip. Lives in its own **persistent** Terraform stack
+([infra/terraform/web](infra/terraform/web)) so the URL stays stable while the
+poc stack is torn down nightly; idle cost is pennies (CloudFront + S3 + HTTP API
++ Lambda).
+
+```
+browser (MediaRecorder) ─▶ CloudFront ──▶ S3 site bucket (static SPA)
+                              └─ /api/* ─▶ HTTP API GW ─▶ web-api Lambda (TS)
+                                                             │ presigned URLs
+                                                             ▼
+   upload PUT / artifact GETs go straight to s3://arp-ingest-<acct>
+   (audio/ upload ──▶ Phase 5 path: SQS → intake → workflow)
+```
+
+- API Lambda source: [services/web-api-ts](services/web-api-ts). Two routes:
+  `POST /api/recordings` (mint a presigned upload URL) and `GET /api/recordings`
+  (list `audio/` objects, derive each one's `transcripts/` / `summaries/` /
+  `action-items/` keys, presign GETs for whichever exist).
+- Auth is a shared passcode (header `x-arp-passcode`) checked against the
+  `arp/web-passcode` secret — set its value out-of-band like the OpenAI key:
+  `aws secretsmanager put-secret-value --secret-id arp/web-passcode --secret-string '<passcode>'`.
+  Presigned URLs are the actual S3 access control.
+- The ingest bucket gets a CORS rule ([poc/s3.tf](infra/terraform/poc/s3.tf)) so the
+  browser can PUT/GET against presigned URLs.
+- Uploads while the poc stack is down still land nowhere (the bucket is destroyed
+  with the stack); the API reports `pipelineDown` so the UI can say so. The S3→SQS
+  notification means anything uploaded right after `terraform apply` is processed
+  once the workers are up.
+
+```bash
+# Bring-up (rarely needed — the stack persists):
+./services/web-api-ts/build.sh          # bundle the Lambda first
+cd infra/terraform/web
+terraform init && terraform apply
+#   -> web_url output is the app; set the passcode secret (above) once.
+```
+
+The frontend SPA (record / upload / results) is Phase 7b — deployed by syncing
+its build to the site bucket and invalidating CloudFront.
+
 ## Build phases
 
 - [x] **0** — Scaffolding & Terraform remote state
@@ -304,3 +353,4 @@ email w/ audio ─▶ SES receiving (MX on inbound.witski.com)
 - [x] **4** — Polyglot activity workers (Java, Go, Python, Ruby) — deployed; full pipeline verified end-to-end (audio → transcript → summary + action items → email)
 - [x] **5** — Automatic S3 intake (upload → S3 event → SQS → intake-ts starts the workflow) — verified end-to-end
 - [x] **6** — SES inbound email (email an audio attachment → SES receipt rule → raw MIME to `arp-inbound-<acct>` → `inbound-parser` Lambda extracts the attachment into `audio/` → the Phase 5 path runs). Gated on the two DNS records above.
+- [ ] **7** — Web app: **7a** persistent infra + API (CloudFront/S3 site, API GW + Lambda presigning ingest-bucket URLs); **7b** React SPA (record via MediaRecorder → upload → poll results).
