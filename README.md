@@ -204,6 +204,12 @@ is committed). Render and apply them all — namespace first — with:
 rather not hit Terraform (copy `k8s/config.env.example`). Requires `envsubst`
 (`brew install gettext`).
 
+> The `account_id` output only lands in Terraform state after a `terraform
+> apply` runs (adding an output doesn't update state on its own). Until then
+> `apply.sh`'s default path fails with `Output "account_id" not found` — run
+> `terraform -chdir=infra/terraform/poc apply` once (an outputs-only change, no
+> infra touched), or use `k8s/config.env`.
+
 - Workers run in the `arp` namespace and reach Temporal at
   `temporal-frontend.temporal.svc:7233` (cross-namespace, frontend stays internal).
 - IRSA roles live in [infra/terraform/poc/irsa.tf](infra/terraform/poc/irsa.tf); the SA
