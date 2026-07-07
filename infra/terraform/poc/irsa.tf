@@ -2,8 +2,8 @@
 # AWS access via the cluster's OIDC provider. A pod using ServiceAccount
 # `<ns>:<name>` can assume the role whose trust policy matches that subject.
 #
-# This file currently defines the role for the summarize (Go) worker. Roles for
-# the other workers follow the same pattern and will be added as they deploy.
+# One role per activity worker: summarize (Go), transcribe (Java), action-items
+# (Python), email (Ruby). The intake service's role lives in intake.tf.
 
 # --- summarize (Go): read OpenAI key from Secrets Manager + S3 read/write ---
 

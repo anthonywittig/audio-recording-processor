@@ -8,8 +8,8 @@
 #   - namespace `temporal`
 #   - secret `temporal-db` in that namespace with key `password` (the RDS password)
 #
-# connectAddr is environment-specific — it must match:
-#   terraform -chdir=infra/terraform/poc output -raw  # (db host)
+# connectAddr is environment-specific — it must match the RDS endpoint (the
+# `host` key in the arp/temporal-db secret; see `terraform output db_secret_arn`).
 # For this POC it is pinned to the current RDS endpoint.
 
 server:
