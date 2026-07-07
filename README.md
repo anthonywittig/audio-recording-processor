@@ -341,8 +341,22 @@ terraform init && terraform apply
 #   -> web_url output is the app; set the passcode secret (above) once.
 ```
 
-The frontend SPA (record / upload / results) is Phase 7b — deployed by syncing
-its build to the site bucket and invalidating CloudFront.
+The SPA ([services/web-app](services/web-app), React + Vite) records via
+MediaRecorder (Safari → AAC/mp4, Chrome → webm/opus — both Transcribe-friendly),
+uploads through the presigned PUT, and polls the list every 5s while anything is
+still processing. Deploy it (build → sync to the site bucket → invalidate
+CloudFront):
+
+```bash
+./services/web-app/deploy.sh
+```
+
+Local dev proxies /api to the deployed stack:
+
+```bash
+cd services/web-app
+ARP_WEB_ORIGIN=$(terraform -chdir=../../infra/terraform/web output -raw web_url) npm run dev
+```
 
 ## Build phases
 
