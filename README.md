@@ -325,7 +325,8 @@ browser (MediaRecorder) ─▶ CloudFront ──▶ S3 site bucket (static SPA)
 - Auth is a shared passcode (header `x-arp-passcode`) checked against the
   `arp/web-passcode` secret — set its value out-of-band like the OpenAI key:
   `aws secretsmanager put-secret-value --secret-id arp/web-passcode --secret-string '<passcode>'`.
-  Presigned URLs are the actual S3 access control.
+  Presigned URLs are the actual S3 access control. The Lambda caches the value for
+  5 minutes, so a rotation takes up to that long to take effect.
 - The ingest bucket gets a CORS rule ([poc/s3.tf](infra/terraform/poc/s3.tf)) so the
   browser can PUT/GET against presigned URLs.
 - Uploads while the poc stack is down still land nowhere (the bucket is destroyed

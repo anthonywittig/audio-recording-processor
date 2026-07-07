@@ -38,7 +38,9 @@ let cachedPasscode: { value: string; fetchedAt: number } | undefined;
 async function passcode(): Promise<string> {
   if (!cachedPasscode || Date.now() - cachedPasscode.fetchedAt > 5 * 60_000) {
     const out = await secrets.send(new GetSecretValueCommand({ SecretId: PASSCODE_SECRET_ID }));
-    cachedPasscode = { value: out.SecretString ?? '', fetchedAt: Date.now() };
+    // Trim: a `put-secret-value --secret-string file://...` easily picks up a
+    // trailing newline, which would fail the exact comparison below.
+    cachedPasscode = { value: (out.SecretString ?? '').trim(), fetchedAt: Date.now() };
   }
   return cachedPasscode.value;
 }
