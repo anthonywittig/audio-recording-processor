@@ -1,0 +1,24 @@
+{
+  "name": "web-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "SPA: record audio in the browser, upload to the pipeline, view transcript/summary/action items",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.5.0",
+    "typescript": "^5.5.0",
+    "vite": "^6.3.0"
+  }
+}
