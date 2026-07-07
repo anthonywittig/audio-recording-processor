@@ -175,8 +175,22 @@ kubectl exec -n temporal deploy/temporal-admintools -- \
   this the schema-setup hook fails with `no pg_hba.conf entry ... no encryption`.
 - The `connectAddr` in the values file is the RDS endpoint from `terraform output`; update
   it if the DB is recreated.
-- Web UI is internal (ClusterIP). Reach it locally:
-  `kubectl port-forward -n temporal svc/temporal-web 8080:8080` → http://localhost:8080
+- **Web UI** is internal (ClusterIP `temporal-web:8080`), nothing is exposed publicly.
+  Reach it with a port-forward:
+  ```bash
+  kubectl port-forward -n temporal svc/temporal-web 8233:8080
+  ```
+  Then open http://localhost:8233 — workflow runs are under the `default` namespace:
+  http://localhost:8233/namespaces/default/workflows. Each `processAudio` run shows the
+  activity timeline (`transcribeAudio → summarizeTranscript ∥ extractActionItems →
+  sendEmail`), the protobuf payloads at each step, and any retries. Note the UI is not
+  read-only — you can terminate/signal workflows from it.
+
+  `kubectl port-forward` drops the streamed connection on idle (`error: lost connection to
+  pod`); wrap it to auto-reconnect if you want it to stay up:
+  ```bash
+  while true; do kubectl port-forward -n temporal svc/temporal-web 8233:8080; sleep 1; done
+  ```
 
 ## Deploying a worker (Phase 4)
 
