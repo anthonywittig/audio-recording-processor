@@ -1,5 +1,5 @@
 variable "region" {
-  description = "AWS region. Must support EKS, Bedrock, Transcribe, and SES."
+  description = "AWS region. Must support EKS, Transcribe, and SES (including inbound receiving)."
   type        = string
   default     = "us-east-1"
 }

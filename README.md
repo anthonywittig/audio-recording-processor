@@ -117,8 +117,9 @@ aws eks update-kubeconfig --name arp --region us-east-1
 kubectl get nodes            # should show the managed node group, Ready
 ```
 
-Subsequent phases (Temporal Helm release, workers) are applied by the same
-`terraform apply` as they land.
+Terraform stops at the AWS layer. The in-cluster pieces are deployed separately:
+the Temporal server via the helm CLI ([Temporal server](#temporal-server-phase-2))
+and the workers via `./k8s/apply.sh` ([Deploying a worker](#deploying-a-worker-phase-4)).
 
 ## Teardown
 
@@ -133,7 +134,7 @@ terraform destroy
 
 **Verify nothing billable lingers** (Terraform can't always catch controller-created
 resources): check the console for stray **Load Balancers**, **NAT gateways / EIPs**,
-**EBS volumes**, and **ECR images**. Bedrock model access and SES identities cost nothing
+**EBS volumes**, and **ECR images**. SES identities cost nothing
 to leave enabled. `terraform destroy` removes the SES receipt rule set and inbound
 resources, but the **inbound DNS records** (TXT + MX) live at the external DNS provider —
 remove those by hand.
@@ -146,7 +147,7 @@ remove those by hand.
 | 2× t3.medium nodes | ~$60 |
 | RDS db.t4g.micro | ~$12 |
 | **NAT gateway (single)** | **~$32** ← biggest avoidable |
-| ECR / S3 / SQS / Transcribe / Bedrock / SES | pennies at POC volume |
+| ECR / S3 / SQS / Lambda / Transcribe / SES / OpenAI | pennies at POC volume |
 
 ## Temporal server (Phase 2)
 
