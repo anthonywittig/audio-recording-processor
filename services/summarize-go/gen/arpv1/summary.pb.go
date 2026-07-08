@@ -21,8 +21,8 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Transcript summary: written by summarize-go, read by email-ruby. Stored in S3
-// as proto-JSON (=> {"summary": "..."}).
+// Transcript summary: written by summarize-go, read by the web app. Stored in
+// S3 as proto-JSON (=> {"summary": "..."}).
 type Summary struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Summary       string                 `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`

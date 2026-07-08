@@ -11,7 +11,6 @@ in a different language:
 | Transcribe | Java | audio → transcript (with speaker diarization) | AWS Transcribe |
 | Summarize | Go | transcript → summary | OpenAI |
 | Action items | Python | transcript → action items | OpenAI |
-| Email | Ruby | transcript+summary+actions → email | SES |
 | Intake | TypeScript | S3 upload → starts the workflow | SQS |
 
 Everything in AWS is **Terraform**. The whole stack is meant to be stood up and torn
@@ -37,11 +36,11 @@ down cheaply.
         TS Workflow Worker  (task queue: workflow)
            ├─ transcribe   → queue: transcribe   → Java worker  → S3
            ├─ summarize    → queue: summarize    → Go worker    → S3
-           ├─ action-items → queue: action-items → Python worker→ S3
-           └─ email        → queue: email        → Ruby worker  → SES
+           └─ action-items → queue: action-items → Python worker→ S3
 ```
 
-Activities pass **S3 keys**, not payloads, to stay under Temporal's message-size limits.
+Activities pass **S3 keys**, not payloads, to stay under Temporal's message-size
+limits. Results are consumed from S3 by the [web app](#web-app-phase-7).
 
 ## Prerequisites
 
@@ -54,7 +53,7 @@ aws configure                   # credentials + default region us-east-1
 ```
 
 Runtimes for building the workers (already present on the dev machine): Node, Java+Maven,
-Go, Python 3, Ruby+Bundler.
+Go, Python 3.
 
 **One-time AWS console steps** (not doable in Terraform):
 - **OpenAI API key** — the summarize (Go) and action-items (Python) workers call OpenAI.
@@ -73,22 +72,6 @@ Go, Python 3, Ruby+Bundler.
   > Why not Bedrock: on this brand-new account, both Anthropic and Nova on-demand Bedrock
   > quotas are **0 tokens/day and non-adjustable** — an account-provisioning hold that
   > isn't self-serve fixable. Once AWS lifts it, Bedrock is a drop-in alternative.
-- **SES (sending)** — the account starts in the SES *sandbox*. Verify the sender and
-  recipient email identities (SES console → Verified identities). Sandbox is fine for the
-  POC; no domain required. Summaries are always emailed to the fixed verified recipient
-  (`RECIPIENT_EMAIL` on the intake deployment), regardless of who sent the audio in.
-- **SES inbound DNS (Phase 6)** — receiving audio by email needs two DNS records on the
-  `inbound_domain` (default `inbound.witski.com`), added by hand at the DNS provider
-  since that zone is not in Route 53. After `terraform apply`, run:
-  ```bash
-  terraform output inbound_dns_records   # -> the exact TXT + MX records to add
-  terraform output inbound_email_address # -> the secret address to send audio to
-  ```
-  Add the `_amazonses.<domain>` **TXT** (SES domain verification) and the `<domain>`
-  **MX** (`10 inbound-smtp.us-east-1.amazonaws.com`). Receiving is inert until they
-  propagate and SES marks the domain *verified*. The address has a random local part and
-  is intentionally kept out of this repo — any sender is accepted, so the address is the
-  only gate. See [Phase 6](#ses-inbound-email-phase-6).
 
 ## Layout
 
@@ -139,10 +122,7 @@ terraform destroy
 
 **Verify nothing billable lingers** (Terraform can't always catch controller-created
 resources): check the console for stray **Load Balancers**, **NAT gateways / EIPs**,
-**EBS volumes**, and **ECR images**. SES identities cost nothing
-to leave enabled. `terraform destroy` removes the SES receipt rule set and inbound
-resources, but the **inbound DNS records** (TXT + MX) live at the external DNS provider —
-remove those by hand.
+**EBS volumes**, and **ECR images**.
 
 ## Cost watch-list (~monthly, us-east-1, POC scale)
 
@@ -152,7 +132,7 @@ remove those by hand.
 | 2× t3.medium nodes | ~$60 |
 | RDS db.t4g.micro | ~$12 |
 | **NAT gateway (single)** | **~$32** ← biggest avoidable |
-| ECR / S3 / SQS / Lambda / Transcribe / SES / OpenAI | pennies at POC volume |
+| ECR / S3 / SQS / Lambda / Transcribe / OpenAI | pennies at POC volume |
 | Web app stack (CloudFront + S3 + API GW + Lambda) | pennies idle — left standing |
 
 ## Temporal server (Phase 2)
@@ -189,8 +169,8 @@ kubectl exec -n temporal deploy/temporal-admintools -- \
   ```
   Then open http://localhost:8233 — workflow runs are under the `default` namespace:
   http://localhost:8233/namespaces/default/workflows. Each `processAudio` run shows the
-  activity timeline (`transcribeAudio → summarizeTranscript ∥ extractActionItems →
-  sendEmail`), the protobuf payloads at each step, and any retries. Note the UI is not
+  activity timeline (`transcribeAudio → summarizeTranscript ∥ extractActionItems`), the
+  protobuf payloads at each step, and any retries. Note the UI is not
   read-only — you can terminate/signal workflows from it.
 
   `kubectl port-forward` drops the streamed connection on idle (`error: lost connection to
@@ -247,9 +227,11 @@ truth for each shape, generated per-language:
 
 | Artifact | proto | Writer | Readers |
 |----------|-------|--------|---------|
-| transcript | `transcript.proto` | Java | Go, Python, Ruby |
-| summary | `summary.proto` | Go | Ruby |
-| action items | `action_items.proto` | Python | Ruby |
+| transcript | `transcript.proto` | Java | Go, Python, web app |
+| summary | `summary.proto` | Go | web app |
+| action items | `action_items.proto` | Python | web app |
+
+(The web app reads the proto-JSON directly — no codegen needed.)
 
 Writers use "always print fields" and readers ignore unknown fields so the languages agree
 byte-for-byte. (`transcribe-raw/` objects are AWS Transcribe's own output, not ours.)
@@ -265,46 +247,16 @@ bash proto/gen.sh
 
 The **Temporal-payload DTOs** (the workflow input + every activity's args/results) are
 also protobuf, defined in [proto/dtos.proto](proto/dtos.proto). Backend workers
-(Java/Go/Python/Ruby) use their SDK's built-in protobuf payload converter; `workflow-ts`
+(Java/Go/Python) use their SDK's built-in protobuf payload converter; `workflow-ts`
 and `intake-ts` use a custom converter (`DefaultPayloadConverterWithProtobufs` over a
 protobufjs json-module root, with `bundlerOptions.ignoreModules: ['fs']` for the workflow
 sandbox). So every payload the pipeline moves — S3 files and Temporal payloads alike — is
 protobuf-defined.
 
-## SES inbound email (Phase 6)
-
-Get an audio recording from a phone into the pipeline with zero client: share a voice
-memo → Mail → send it to the (secret) inbound address.
-
-```
-email w/ audio ─▶ SES receiving (MX on inbound.witski.com)
-                     │ receipt rule (matches the one secret recipient)
-                     ▼
-              s3://arp-inbound-<acct>/raw/…  (raw MIME)
-                     │ s3:ObjectCreated
-                     ▼
-              inbound-parser Lambda (Python, stdlib email)
-                     │ extract first audio attachment
-                     ▼
-              s3://arp-ingest-<acct>/audio/…  ──▶ Phase 5 path (SQS → intake → workflow)
-```
-
-- Terraform: [ses-inbound.tf](infra/terraform/poc/ses-inbound.tf). Lambda source:
-  [services/inbound-parser-py](services/inbound-parser-py) (packaged via `archive_file`,
-  no build step).
-- A separate `arp-inbound-<acct>` bucket holds raw MIME (7-day lifecycle expiry) so the
-  ingest bucket's `audio/` notification stays untouched.
-- The recipient address has a random local part (Terraform `random_id`, state-only) and
-  is **not** in this repo. Any sender is accepted, so the address is the only gate.
-- Requires the TXT + MX DNS records from [Prerequisites](#prerequisites); until they
-  propagate and SES verifies the domain, inbound mail is rejected/dropped.
-- SES receiving max message size is 40 MB (fine for voice memos). Attachments must be a
-  format AWS Transcribe accepts (m4a, mp3, mp4, wav, flac, ogg, amr, webm).
-
 ## Web app (Phase 7)
 
 Record audio in the browser (phone or desktop) and watch the pipeline results
-appear — no email round-trip. Lives in its own **persistent** Terraform stack
+appear. Lives in its own **persistent** Terraform stack
 ([infra/terraform/web](infra/terraform/web)) so the URL stays stable while the
 poc stack is torn down nightly; idle cost is pennies (CloudFront + S3 + HTTP API
 + Lambda).
@@ -365,7 +317,7 @@ ARP_WEB_ORIGIN=$(terraform -chdir=../../infra/terraform/web output -raw web_url)
 - [x] **1** — Core AWS infra (VPC, EKS, RDS, ECR)
 - [x] **2** — Temporal server via Helm (external RDS, no OpenSearch)
 - [x] **3** — TS workflow worker + stub activities (prove routing)
-- [x] **4** — Polyglot activity workers (Java, Go, Python, Ruby) — deployed; full pipeline verified end-to-end (audio → transcript → summary + action items → email)
+- [x] **4** — Polyglot activity workers (Java, Go, Python) — deployed; full pipeline verified end-to-end (audio → transcript → summary + action items)
 - [x] **5** — Automatic S3 intake (upload → S3 event → SQS → intake-ts starts the workflow) — verified end-to-end
-- [x] **6** — SES inbound email (email an audio attachment → SES receipt rule → raw MIME to `arp-inbound-<acct>` → `inbound-parser` Lambda extracts the attachment into `audio/` → the Phase 5 path runs). Gated on the two DNS records above.
-- [ ] **7** — Web app: **7a** persistent infra + API (CloudFront/S3 site, API GW + Lambda presigning ingest-bucket URLs); **7b** React SPA (record via MediaRecorder → upload → poll results).
+- [x] ~~**6** — SES inbound email~~ — built, verified, then **removed** along with the Ruby email worker once the web app (Phase 7) covered intake and results; see PR history if you want it back.
+- [x] **7** — Web app: **7a** persistent infra + API (CloudFront/S3 site, API GW + Lambda presigning ingest-bucket URLs); **7b** React SPA (record via MediaRecorder → upload → poll results). Verified end-to-end, including two-speaker diarization.

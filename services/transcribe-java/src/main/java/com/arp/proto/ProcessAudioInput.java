@@ -30,7 +30,6 @@ private static final long serialVersionUID = 0L;
   private ProcessAudioInput() {
     bucket_ = "";
     audioKey_ = "";
-    recipientEmail_ = "";
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor
@@ -129,45 +128,6 @@ private static final long serialVersionUID = 0L;
     }
   }
 
-  public static final int RECIPIENT_EMAIL_FIELD_NUMBER = 3;
-  @SuppressWarnings("serial")
-  private volatile java.lang.Object recipientEmail_ = "";
-  /**
-   * <code>string recipient_email = 3;</code>
-   * @return The recipientEmail.
-   */
-  @java.lang.Override
-  public java.lang.String getRecipientEmail() {
-    java.lang.Object ref = recipientEmail_;
-    if (ref instanceof java.lang.String) {
-      return (java.lang.String) ref;
-    } else {
-      com.google.protobuf.ByteString bs = 
-          (com.google.protobuf.ByteString) ref;
-      java.lang.String s = bs.toStringUtf8();
-      recipientEmail_ = s;
-      return s;
-    }
-  }
-  /**
-   * <code>string recipient_email = 3;</code>
-   * @return The bytes for recipientEmail.
-   */
-  @java.lang.Override
-  public com.google.protobuf.ByteString
-      getRecipientEmailBytes() {
-    java.lang.Object ref = recipientEmail_;
-    if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b = 
-          com.google.protobuf.ByteString.copyFromUtf8(
-              (java.lang.String) ref);
-      recipientEmail_ = b;
-      return b;
-    } else {
-      return (com.google.protobuf.ByteString) ref;
-    }
-  }
-
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -188,9 +148,6 @@ private static final long serialVersionUID = 0L;
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(audioKey_)) {
       com.google.protobuf.GeneratedMessage.writeString(output, 2, audioKey_);
     }
-    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(recipientEmail_)) {
-      com.google.protobuf.GeneratedMessage.writeString(output, 3, recipientEmail_);
-    }
     getUnknownFields().writeTo(output);
   }
   private int computeSerializedSize_0() {
@@ -200,9 +157,6 @@ private static final long serialVersionUID = 0L;
     }
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(audioKey_)) {
       size += com.google.protobuf.GeneratedMessage.computeStringSize(2, audioKey_);
-    }
-    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(recipientEmail_)) {
-      size += com.google.protobuf.GeneratedMessage.computeStringSize(3, recipientEmail_);
     }
     return size;
   }
@@ -232,8 +186,6 @@ private static final long serialVersionUID = 0L;
         .equals(other.getBucket())) return false;
     if (!getAudioKey()
         .equals(other.getAudioKey())) return false;
-    if (!getRecipientEmail()
-        .equals(other.getRecipientEmail())) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -249,8 +201,6 @@ private static final long serialVersionUID = 0L;
     hash = (53 * hash) + getBucket().hashCode();
     hash = (37 * hash) + AUDIO_KEY_FIELD_NUMBER;
     hash = (53 * hash) + getAudioKey().hashCode();
-    hash = (37 * hash) + RECIPIENT_EMAIL_FIELD_NUMBER;
-    hash = (53 * hash) + getRecipientEmail().hashCode();
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -384,7 +334,6 @@ private static final long serialVersionUID = 0L;
       bitField0_ = 0;
       bucket_ = "";
       audioKey_ = "";
-      recipientEmail_ = "";
       return this;
     }
 
@@ -424,9 +373,6 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00000002) != 0)) {
         result.audioKey_ = audioKey_;
       }
-      if (((from_bitField0_ & 0x00000004) != 0)) {
-        result.recipientEmail_ = recipientEmail_;
-      }
     }
 
     @java.lang.Override
@@ -449,11 +395,6 @@ private static final long serialVersionUID = 0L;
       if (!other.getAudioKey().isEmpty()) {
         audioKey_ = other.audioKey_;
         bitField0_ |= 0x00000002;
-        onChanged();
-      }
-      if (!other.getRecipientEmail().isEmpty()) {
-        recipientEmail_ = other.recipientEmail_;
-        bitField0_ |= 0x00000004;
         onChanged();
       }
       this.mergeUnknownFields(other.getUnknownFields());
@@ -492,11 +433,6 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000002;
               break;
             } // case 18
-            case 26: {
-              recipientEmail_ = input.readStringRequireUtf8();
-              bitField0_ |= 0x00000004;
-              break;
-            } // case 26
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -654,78 +590,6 @@ private static final long serialVersionUID = 0L;
       checkByteStringIsUtf8(value);
       audioKey_ = value;
       bitField0_ |= 0x00000002;
-      onChanged();
-      return this;
-    }
-
-    private java.lang.Object recipientEmail_ = "";
-    /**
-     * <code>string recipient_email = 3;</code>
-     * @return The recipientEmail.
-     */
-    public java.lang.String getRecipientEmail() {
-      java.lang.Object ref = recipientEmail_;
-      if (!(ref instanceof java.lang.String)) {
-        com.google.protobuf.ByteString bs =
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        recipientEmail_ = s;
-        return s;
-      } else {
-        return (java.lang.String) ref;
-      }
-    }
-    /**
-     * <code>string recipient_email = 3;</code>
-     * @return The bytes for recipientEmail.
-     */
-    public com.google.protobuf.ByteString
-        getRecipientEmailBytes() {
-      java.lang.Object ref = recipientEmail_;
-      if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        recipientEmail_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-    /**
-     * <code>string recipient_email = 3;</code>
-     * @param value The recipientEmail to set.
-     * @return This builder for chaining.
-     */
-    public Builder setRecipientEmail(
-        java.lang.String value) {
-      if (value == null) { throw new NullPointerException(); }
-      recipientEmail_ = value;
-      bitField0_ |= 0x00000004;
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>string recipient_email = 3;</code>
-     * @return This builder for chaining.
-     */
-    public Builder clearRecipientEmail() {
-      recipientEmail_ = getDefaultInstance().getRecipientEmail();
-      bitField0_ = (bitField0_ & ~0x00000004);
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>string recipient_email = 3;</code>
-     * @param value The bytes for recipientEmail to set.
-     * @return This builder for chaining.
-     */
-    public Builder setRecipientEmailBytes(
-        com.google.protobuf.ByteString value) {
-      if (value == null) { throw new NullPointerException(); }
-      checkByteStringIsUtf8(value);
-      recipientEmail_ = value;
-      bitField0_ |= 0x00000004;
       onChanged();
       return this;
     }

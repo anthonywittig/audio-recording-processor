@@ -23,7 +23,6 @@ async function main(): Promise<void> {
   const address = process.env.TEMPORAL_ADDRESS ?? 'localhost:7233';
   const namespace = process.env.TEMPORAL_NAMESPACE ?? 'default';
   const queueUrl = process.env.INTAKE_QUEUE_URL;
-  const recipient = process.env.RECIPIENT_EMAIL ?? 'someone@example.com';
   if (!queueUrl) {
     throw new Error('INTAKE_QUEUE_URL is required');
   }
@@ -43,7 +42,7 @@ async function main(): Promise<void> {
   process.on('SIGTERM', stop);
   process.on('SIGINT', stop);
 
-  console.log(`intake started: queue=${queueUrl} temporal=${address}/${namespace} recipient=${recipient}`);
+  console.log(`intake started: queue=${queueUrl} temporal=${address}/${namespace}`);
 
   while (running) {
     const res = await sqs.send(
@@ -56,7 +55,7 @@ async function main(): Promise<void> {
 
     for (const msg of res.Messages ?? []) {
       try {
-        await handleBody(client, recipient, msg.Body ?? '');
+        await handleBody(client, msg.Body ?? '');
         // Delete on success (or benign duplicate / non-audio / S3 test event).
         await sqs.send(
           new DeleteMessageCommand({ QueueUrl: queueUrl, ReceiptHandle: msg.ReceiptHandle! }),
@@ -71,7 +70,7 @@ async function main(): Promise<void> {
   await connection.close();
 }
 
-async function handleBody(client: Client, recipient: string, body: string): Promise<void> {
+async function handleBody(client: Client, body: string): Promise<void> {
   const event = JSON.parse(body) as { Records?: S3EventRecord[]; Event?: string };
 
   // S3 sends an s3:TestEvent (no Records) when the notification is first wired.
@@ -95,7 +94,7 @@ async function handleBody(client: Client, recipient: string, body: string): Prom
     try {
       const input = root
         .lookupType('arp.v1.ProcessAudioInput')
-        .create({ bucket, audioKey, recipientEmail: recipient });
+        .create({ bucket, audioKey });
       await client.workflow.start(WORKFLOW_TYPE, {
         taskQueue: TASK_QUEUE,
         workflowId,

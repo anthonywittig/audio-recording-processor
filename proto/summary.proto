@@ -6,8 +6,8 @@ option go_package = "github.com/anthonywittig/audio-recording-processor/services
 option java_package = "com.arp.proto";
 option java_multiple_files = true;
 
-// Transcript summary: written by summarize-go, read by email-ruby. Stored in S3
-// as proto-JSON (=> {"summary": "..."}).
+// Transcript summary: written by summarize-go, read by the web app. Stored in
+// S3 as proto-JSON (=> {"summary": "..."}).
 message Summary {
   string summary = 1;
 }

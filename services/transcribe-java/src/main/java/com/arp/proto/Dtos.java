@@ -61,16 +61,6 @@ public final class Dtos extends com.google.protobuf.GeneratedFile {
   static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_arp_v1_ActionItemsResult_fieldAccessorTable;
-  static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_arp_v1_EmailInput_descriptor;
-  static final 
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_arp_v1_EmailInput_fieldAccessorTable;
-  static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_arp_v1_EmailResult_descriptor;
-  static final 
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_arp_v1_EmailResult_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -80,24 +70,19 @@ public final class Dtos extends com.google.protobuf.GeneratedFile {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\ndtos.proto\022\006arp.v1\"O\n\021ProcessAudioInpu" +
-      "t\022\016\n\006bucket\030\001 \001(\t\022\021\n\taudio_key\030\002 \001(\t\022\027\n\017" +
-      "recipient_email\030\003 \001(\t\"4\n\017TranscribeInput" +
-      "\022\016\n\006bucket\030\001 \001(\t\022\021\n\taudio_key\030\002 \001(\t\"*\n\020T" +
-      "ranscribeResult\022\026\n\016transcript_key\030\001 \001(\t\"" +
-      "8\n\016SummarizeInput\022\016\n\006bucket\030\001 \001(\t\022\026\n\016tra" +
-      "nscript_key\030\002 \001(\t\"&\n\017SummarizeResult\022\023\n\013" +
-      "summary_key\030\001 \001(\t\":\n\020ActionItemsInput\022\016\n" +
-      "\006bucket\030\001 \001(\t\022\026\n\016transcript_key\030\002 \001(\t\"-\n" +
-      "\021ActionItemsResult\022\030\n\020action_items_key\030\001" +
-      " \001(\t\"|\n\nEmailInput\022\016\n\006bucket\030\001 \001(\t\022\026\n\016tr" +
-      "anscript_key\030\002 \001(\t\022\023\n\013summary_key\030\003 \001(\t\022" +
-      "\030\n\020action_items_key\030\004 \001(\t\022\027\n\017recipient_e" +
-      "mail\030\005 \001(\t\"!\n\013EmailResult\022\022\n\nmessage_id\030" +
-      "\001 \001(\tBk\n\rcom.arp.protoP\001ZXgithub.com/ant" +
-      "honywittig/audio-recording-processor/ser" +
-      "vices/summarize-go/gen/arpv1;arpv1b\006prot" +
-      "o3"
+      "\n\ndtos.proto\022\006arp.v1\"<\n\021ProcessAudioInpu" +
+      "t\022\016\n\006bucket\030\001 \001(\t\022\021\n\taudio_key\030\002 \001(\tJ\004\010\003" +
+      "\020\004\"4\n\017TranscribeInput\022\016\n\006bucket\030\001 \001(\t\022\021\n" +
+      "\taudio_key\030\002 \001(\t\"*\n\020TranscribeResult\022\026\n\016" +
+      "transcript_key\030\001 \001(\t\"8\n\016SummarizeInput\022\016" +
+      "\n\006bucket\030\001 \001(\t\022\026\n\016transcript_key\030\002 \001(\t\"&" +
+      "\n\017SummarizeResult\022\023\n\013summary_key\030\001 \001(\t\":" +
+      "\n\020ActionItemsInput\022\016\n\006bucket\030\001 \001(\t\022\026\n\016tr" +
+      "anscript_key\030\002 \001(\t\"-\n\021ActionItemsResult\022" +
+      "\030\n\020action_items_key\030\001 \001(\tBk\n\rcom.arp.pro" +
+      "toP\001ZXgithub.com/anthonywittig/audio-rec" +
+      "ording-processor/services/summarize-go/g" +
+      "en/arpv1;arpv1b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -108,7 +93,7 @@ public final class Dtos extends com.google.protobuf.GeneratedFile {
     internal_static_arp_v1_ProcessAudioInput_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_arp_v1_ProcessAudioInput_descriptor,
-        new java.lang.String[] { "Bucket", "AudioKey", "RecipientEmail", });
+        new java.lang.String[] { "Bucket", "AudioKey", });
     internal_static_arp_v1_TranscribeInput_descriptor =
       getDescriptor().getMessageType(1);
     internal_static_arp_v1_TranscribeInput_fieldAccessorTable = new
@@ -145,18 +130,6 @@ public final class Dtos extends com.google.protobuf.GeneratedFile {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_arp_v1_ActionItemsResult_descriptor,
         new java.lang.String[] { "ActionItemsKey", });
-    internal_static_arp_v1_EmailInput_descriptor =
-      getDescriptor().getMessageType(7);
-    internal_static_arp_v1_EmailInput_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_arp_v1_EmailInput_descriptor,
-        new java.lang.String[] { "Bucket", "TranscriptKey", "SummaryKey", "ActionItemsKey", "RecipientEmail", });
-    internal_static_arp_v1_EmailResult_descriptor =
-      getDescriptor().getMessageType(8);
-    internal_static_arp_v1_EmailResult_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_arp_v1_EmailResult_descriptor,
-        new java.lang.String[] { "MessageId", });
     descriptor.resolveAllFeaturesImmutable();
   }
 

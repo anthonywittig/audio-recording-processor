@@ -22,12 +22,11 @@ const (
 )
 
 type ProcessAudioInput struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Bucket         string                 `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
-	AudioKey       string                 `protobuf:"bytes,2,opt,name=audio_key,json=audioKey,proto3" json:"audio_key,omitempty"`
-	RecipientEmail string                 `protobuf:"bytes,3,opt,name=recipient_email,json=recipientEmail,proto3" json:"recipient_email,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Bucket        string                 `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
+	AudioKey      string                 `protobuf:"bytes,2,opt,name=audio_key,json=audioKey,proto3" json:"audio_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ProcessAudioInput) Reset() {
@@ -70,13 +69,6 @@ func (x *ProcessAudioInput) GetBucket() string {
 func (x *ProcessAudioInput) GetAudioKey() string {
 	if x != nil {
 		return x.AudioKey
-	}
-	return ""
-}
-
-func (x *ProcessAudioInput) GetRecipientEmail() string {
-	if x != nil {
-		return x.RecipientEmail
 	}
 	return ""
 }
@@ -369,136 +361,15 @@ func (x *ActionItemsResult) GetActionItemsKey() string {
 	return ""
 }
 
-type EmailInput struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Bucket         string                 `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
-	TranscriptKey  string                 `protobuf:"bytes,2,opt,name=transcript_key,json=transcriptKey,proto3" json:"transcript_key,omitempty"`
-	SummaryKey     string                 `protobuf:"bytes,3,opt,name=summary_key,json=summaryKey,proto3" json:"summary_key,omitempty"`
-	ActionItemsKey string                 `protobuf:"bytes,4,opt,name=action_items_key,json=actionItemsKey,proto3" json:"action_items_key,omitempty"`
-	RecipientEmail string                 `protobuf:"bytes,5,opt,name=recipient_email,json=recipientEmail,proto3" json:"recipient_email,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *EmailInput) Reset() {
-	*x = EmailInput{}
-	mi := &file_dtos_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *EmailInput) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EmailInput) ProtoMessage() {}
-
-func (x *EmailInput) ProtoReflect() protoreflect.Message {
-	mi := &file_dtos_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EmailInput.ProtoReflect.Descriptor instead.
-func (*EmailInput) Descriptor() ([]byte, []int) {
-	return file_dtos_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *EmailInput) GetBucket() string {
-	if x != nil {
-		return x.Bucket
-	}
-	return ""
-}
-
-func (x *EmailInput) GetTranscriptKey() string {
-	if x != nil {
-		return x.TranscriptKey
-	}
-	return ""
-}
-
-func (x *EmailInput) GetSummaryKey() string {
-	if x != nil {
-		return x.SummaryKey
-	}
-	return ""
-}
-
-func (x *EmailInput) GetActionItemsKey() string {
-	if x != nil {
-		return x.ActionItemsKey
-	}
-	return ""
-}
-
-func (x *EmailInput) GetRecipientEmail() string {
-	if x != nil {
-		return x.RecipientEmail
-	}
-	return ""
-}
-
-type EmailResult struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	MessageId     string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *EmailResult) Reset() {
-	*x = EmailResult{}
-	mi := &file_dtos_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *EmailResult) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EmailResult) ProtoMessage() {}
-
-func (x *EmailResult) ProtoReflect() protoreflect.Message {
-	mi := &file_dtos_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EmailResult.ProtoReflect.Descriptor instead.
-func (*EmailResult) Descriptor() ([]byte, []int) {
-	return file_dtos_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *EmailResult) GetMessageId() string {
-	if x != nil {
-		return x.MessageId
-	}
-	return ""
-}
-
 var File_dtos_proto protoreflect.FileDescriptor
 
 const file_dtos_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"dtos.proto\x12\x06arp.v1\"q\n" +
+	"dtos.proto\x12\x06arp.v1\"N\n" +
 	"\x11ProcessAudioInput\x12\x16\n" +
 	"\x06bucket\x18\x01 \x01(\tR\x06bucket\x12\x1b\n" +
-	"\taudio_key\x18\x02 \x01(\tR\baudioKey\x12'\n" +
-	"\x0frecipient_email\x18\x03 \x01(\tR\x0erecipientEmail\"F\n" +
+	"\taudio_key\x18\x02 \x01(\tR\baudioKeyJ\x04\b\x03\x10\x04\"F\n" +
 	"\x0fTranscribeInput\x12\x16\n" +
 	"\x06bucket\x18\x01 \x01(\tR\x06bucket\x12\x1b\n" +
 	"\taudio_key\x18\x02 \x01(\tR\baudioKey\"9\n" +
@@ -514,18 +385,7 @@ const file_dtos_proto_rawDesc = "" +
 	"\x06bucket\x18\x01 \x01(\tR\x06bucket\x12%\n" +
 	"\x0etranscript_key\x18\x02 \x01(\tR\rtranscriptKey\"=\n" +
 	"\x11ActionItemsResult\x12(\n" +
-	"\x10action_items_key\x18\x01 \x01(\tR\x0eactionItemsKey\"\xbf\x01\n" +
-	"\n" +
-	"EmailInput\x12\x16\n" +
-	"\x06bucket\x18\x01 \x01(\tR\x06bucket\x12%\n" +
-	"\x0etranscript_key\x18\x02 \x01(\tR\rtranscriptKey\x12\x1f\n" +
-	"\vsummary_key\x18\x03 \x01(\tR\n" +
-	"summaryKey\x12(\n" +
-	"\x10action_items_key\x18\x04 \x01(\tR\x0eactionItemsKey\x12'\n" +
-	"\x0frecipient_email\x18\x05 \x01(\tR\x0erecipientEmail\",\n" +
-	"\vEmailResult\x12\x1d\n" +
-	"\n" +
-	"message_id\x18\x01 \x01(\tR\tmessageIdBk\n" +
+	"\x10action_items_key\x18\x01 \x01(\tR\x0eactionItemsKeyBk\n" +
 	"\rcom.arp.protoP\x01ZXgithub.com/anthonywittig/audio-recording-processor/services/summarize-go/gen/arpv1;arpv1b\x06proto3"
 
 var (
@@ -540,7 +400,7 @@ func file_dtos_proto_rawDescGZIP() []byte {
 	return file_dtos_proto_rawDescData
 }
 
-var file_dtos_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_dtos_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_dtos_proto_goTypes = []any{
 	(*ProcessAudioInput)(nil), // 0: arp.v1.ProcessAudioInput
 	(*TranscribeInput)(nil),   // 1: arp.v1.TranscribeInput
@@ -549,8 +409,6 @@ var file_dtos_proto_goTypes = []any{
 	(*SummarizeResult)(nil),   // 4: arp.v1.SummarizeResult
 	(*ActionItemsInput)(nil),  // 5: arp.v1.ActionItemsInput
 	(*ActionItemsResult)(nil), // 6: arp.v1.ActionItemsResult
-	(*EmailInput)(nil),        // 7: arp.v1.EmailInput
-	(*EmailResult)(nil),       // 8: arp.v1.EmailResult
 }
 var file_dtos_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -571,7 +429,7 @@ func file_dtos_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dtos_proto_rawDesc), len(file_dtos_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

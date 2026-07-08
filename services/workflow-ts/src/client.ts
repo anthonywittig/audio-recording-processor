@@ -10,7 +10,7 @@ const root = require('./proto/root') as unknown as Root;
 // S3/SQS intake service exists. Reads inputs from env with sensible defaults.
 //
 //   TEMPORAL_ADDRESS=localhost:7233 \
-//   BUCKET=my-bucket AUDIO_KEY=audio/sample.mp3 RECIPIENT=me@example.com \
+//   BUCKET=my-bucket AUDIO_KEY=audio/sample.mp3 \
 //   npm run start-workflow
 
 async function run(): Promise<void> {
@@ -19,7 +19,6 @@ async function run(): Promise<void> {
 
   const bucket = process.env.BUCKET ?? 'arp-ingest-placeholder';
   const audioKey = process.env.AUDIO_KEY ?? 'audio/sample.mp3';
-  const recipientEmail = process.env.RECIPIENT ?? 'someone@example.com';
 
   const connection = await Connection.connect({ address });
   const client = new Client({
@@ -29,9 +28,7 @@ async function run(): Promise<void> {
   });
 
   // Send the workflow input as a protobuf message (encoded by the converter).
-  const input = root
-    .lookupType('arp.v1.ProcessAudioInput')
-    .create({ bucket, audioKey, recipientEmail });
+  const input = root.lookupType('arp.v1.ProcessAudioInput').create({ bucket, audioKey });
 
   const handle = await client.workflow.start(processAudio, {
     taskQueue: TASK_QUEUES.workflow,

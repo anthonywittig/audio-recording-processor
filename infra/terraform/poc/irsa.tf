@@ -3,7 +3,7 @@
 # `<ns>:<name>` can assume the role whose trust policy matches that subject.
 #
 # One role per activity worker: summarize (Go), transcribe (Java), action-items
-# (Python), email (Ruby). The intake service's role lives in intake.tf.
+# (Python). The intake service's role lives in intake.tf.
 
 # --- summarize (Go): read OpenAI key from Secrets Manager + S3 read/write ---
 
@@ -175,61 +175,4 @@ resource "aws_iam_role_policy" "action_items" {
 
 output "action_items_role_arn" {
   value = aws_iam_role.action_items.arn
-}
-
-# --- email (Ruby): SES send + S3 read ---
-
-data "aws_iam_policy_document" "email_assume" {
-  statement {
-    actions = ["sts:AssumeRoleWithWebIdentity"]
-    effect  = "Allow"
-    principals {
-      type        = "Federated"
-      identifiers = [module.eks.oidc_provider_arn]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "${module.eks.oidc_provider}:sub"
-      values   = ["system:serviceaccount:${local.app_namespace}:email-ruby"]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "${module.eks.oidc_provider}:aud"
-      values   = ["sts.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "email" {
-  name               = "${local.name}-email"
-  assume_role_policy = data.aws_iam_policy_document.email_assume.json
-  tags               = local.common_tags
-}
-
-data "aws_iam_policy_document" "email" {
-  statement {
-    sid       = "SendEmail"
-    actions   = ["ses:SendEmail"]
-    resources = ["*"]
-  }
-  statement {
-    sid       = "IngestObjects"
-    actions   = ["s3:GetObject"]
-    resources = ["${aws_s3_bucket.ingest.arn}/*"]
-  }
-  statement {
-    sid       = "IngestList"
-    actions   = ["s3:ListBucket"]
-    resources = [aws_s3_bucket.ingest.arn]
-  }
-}
-
-resource "aws_iam_role_policy" "email" {
-  name   = "${local.name}-email"
-  role   = aws_iam_role.email.id
-  policy = data.aws_iam_policy_document.email.json
-}
-
-output "email_role_arn" {
-  value = aws_iam_role.email.arn
 }
