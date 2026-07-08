@@ -22,23 +22,49 @@ down cheaply.
 
 ## Architecture
 
-```
- upload audio ─▶ S3 ingest bucket
-                     │ s3:ObjectCreated
-                     ▼
-                   SQS ──▶ intake service (in-cluster, Temporal CLIENT)
-                                    │ startWorkflow
-                                    ▼
-                 ┌──────────────────────────────────────────────┐
-                 │  Temporal server (EKS) + Postgres on RDS      │
-                 │  no OpenSearch — advanced visibility on PG    │
-                 └──────────────────────────────────────────────┘
-                                    │
-        TS Workflow Worker  (task queue: workflow)
-           ├─ transcribe   → queue: transcribe   → Java worker  → S3
-           ├─ summarize    → queue: summarize    → Go worker    → S3
-           ├─ action-items → queue: action-items → Python worker→ S3
-           └─ bundle       → queue: bundle       → Ruby worker  → S3 (combined doc)
+```mermaid
+flowchart TB
+  Browser["Browser SPA<br/>(record via MediaRecorder, view results)"]
+
+  subgraph webstack["Persistent web stack — pennies idle, survives nightly teardown"]
+    CF["CloudFront"]
+    Site["S3 site bucket<br/>(built SPA)"]
+    APIGW["HTTP API Gateway"]
+    Lambda["web-api Lambda<br/>(passcode auth, presigned URLs,<br/>status from S3 listings)"]
+  end
+
+  subgraph poc["poc stack — stood up / torn down nightly via Terraform"]
+    Ingest[("S3 ingest bucket<br/>audio/ · transcripts/ · summaries/<br/>action-items/ · bundles/")]
+    SQS["SQS intake queue"]
+
+    subgraph eks["EKS"]
+      Intake["intake-ts<br/>(Temporal client)"]
+      Temporal["Temporal server (Helm)<br/>advanced visibility on Postgres,<br/>no OpenSearch"]
+      WF["workflow-ts worker<br/>queue: workflow"]
+      Java["transcribe-java<br/>queue: transcribe"]
+      Go["summarize-go<br/>queue: summarize"]
+      Py["action-items-py<br/>queue: action-items"]
+      Rb["bundle-ruby<br/>queue: bundle"]
+    end
+
+    RDS[("RDS Postgres<br/>db.t4g.micro")]
+    Transcribe["AWS Transcribe<br/>(diarization)"]
+  end
+
+  OpenAI["OpenAI API"]
+
+  Browser --> CF
+  CF --> Site
+  CF -->|"/api/*"| APIGW --> Lambda
+  Browser -->|"presigned PUT audio/<br/>presigned GET bundle"| Ingest
+  Ingest -->|"s3:ObjectCreated audio/"| SQS --> Intake -->|startWorkflow| Temporal
+  Temporal <--> RDS
+  Temporal <-->|task queues| WF
+  Temporal <--> Java & Go & Py & Rb
+  Java --> Transcribe
+  Go --> OpenAI
+  Py --> OpenAI
+  Java & Go & Py & Rb -->|"write artifacts"| Ingest
 ```
 
 Activities pass **S3 keys**, not payloads, to stay under Temporal's message-size
