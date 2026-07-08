@@ -361,6 +361,118 @@ func (x *ActionItemsResult) GetActionItemsKey() string {
 	return ""
 }
 
+type BundleInput struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Bucket         string                 `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
+	TranscriptKey  string                 `protobuf:"bytes,2,opt,name=transcript_key,json=transcriptKey,proto3" json:"transcript_key,omitempty"`
+	SummaryKey     string                 `protobuf:"bytes,3,opt,name=summary_key,json=summaryKey,proto3" json:"summary_key,omitempty"`
+	ActionItemsKey string                 `protobuf:"bytes,4,opt,name=action_items_key,json=actionItemsKey,proto3" json:"action_items_key,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *BundleInput) Reset() {
+	*x = BundleInput{}
+	mi := &file_dtos_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BundleInput) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BundleInput) ProtoMessage() {}
+
+func (x *BundleInput) ProtoReflect() protoreflect.Message {
+	mi := &file_dtos_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BundleInput.ProtoReflect.Descriptor instead.
+func (*BundleInput) Descriptor() ([]byte, []int) {
+	return file_dtos_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *BundleInput) GetBucket() string {
+	if x != nil {
+		return x.Bucket
+	}
+	return ""
+}
+
+func (x *BundleInput) GetTranscriptKey() string {
+	if x != nil {
+		return x.TranscriptKey
+	}
+	return ""
+}
+
+func (x *BundleInput) GetSummaryKey() string {
+	if x != nil {
+		return x.SummaryKey
+	}
+	return ""
+}
+
+func (x *BundleInput) GetActionItemsKey() string {
+	if x != nil {
+		return x.ActionItemsKey
+	}
+	return ""
+}
+
+type BundleResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BundleKey     string                 `protobuf:"bytes,1,opt,name=bundle_key,json=bundleKey,proto3" json:"bundle_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BundleResult) Reset() {
+	*x = BundleResult{}
+	mi := &file_dtos_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BundleResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BundleResult) ProtoMessage() {}
+
+func (x *BundleResult) ProtoReflect() protoreflect.Message {
+	mi := &file_dtos_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BundleResult.ProtoReflect.Descriptor instead.
+func (*BundleResult) Descriptor() ([]byte, []int) {
+	return file_dtos_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *BundleResult) GetBundleKey() string {
+	if x != nil {
+		return x.BundleKey
+	}
+	return ""
+}
+
 var File_dtos_proto protoreflect.FileDescriptor
 
 const file_dtos_proto_rawDesc = "" +
@@ -385,7 +497,16 @@ const file_dtos_proto_rawDesc = "" +
 	"\x06bucket\x18\x01 \x01(\tR\x06bucket\x12%\n" +
 	"\x0etranscript_key\x18\x02 \x01(\tR\rtranscriptKey\"=\n" +
 	"\x11ActionItemsResult\x12(\n" +
-	"\x10action_items_key\x18\x01 \x01(\tR\x0eactionItemsKeyBk\n" +
+	"\x10action_items_key\x18\x01 \x01(\tR\x0eactionItemsKey\"\x97\x01\n" +
+	"\vBundleInput\x12\x16\n" +
+	"\x06bucket\x18\x01 \x01(\tR\x06bucket\x12%\n" +
+	"\x0etranscript_key\x18\x02 \x01(\tR\rtranscriptKey\x12\x1f\n" +
+	"\vsummary_key\x18\x03 \x01(\tR\n" +
+	"summaryKey\x12(\n" +
+	"\x10action_items_key\x18\x04 \x01(\tR\x0eactionItemsKey\"-\n" +
+	"\fBundleResult\x12\x1d\n" +
+	"\n" +
+	"bundle_key\x18\x01 \x01(\tR\tbundleKeyBk\n" +
 	"\rcom.arp.protoP\x01ZXgithub.com/anthonywittig/audio-recording-processor/services/summarize-go/gen/arpv1;arpv1b\x06proto3"
 
 var (
@@ -400,7 +521,7 @@ func file_dtos_proto_rawDescGZIP() []byte {
 	return file_dtos_proto_rawDescData
 }
 
-var file_dtos_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_dtos_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_dtos_proto_goTypes = []any{
 	(*ProcessAudioInput)(nil), // 0: arp.v1.ProcessAudioInput
 	(*TranscribeInput)(nil),   // 1: arp.v1.TranscribeInput
@@ -409,6 +530,8 @@ var file_dtos_proto_goTypes = []any{
 	(*SummarizeResult)(nil),   // 4: arp.v1.SummarizeResult
 	(*ActionItemsInput)(nil),  // 5: arp.v1.ActionItemsInput
 	(*ActionItemsResult)(nil), // 6: arp.v1.ActionItemsResult
+	(*BundleInput)(nil),       // 7: arp.v1.BundleInput
+	(*BundleResult)(nil),      // 8: arp.v1.BundleResult
 }
 var file_dtos_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -429,7 +552,7 @@ func file_dtos_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dtos_proto_rawDesc), len(file_dtos_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

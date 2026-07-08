@@ -12,6 +12,7 @@ export const TASK_QUEUES = {
   transcribe: 'transcribe',
   summarize: 'summarize',
   actionItems: 'action-items',
+  bundle: 'bundle',
 } as const;
 
 /** Input to the top-level workflow. */
@@ -29,6 +30,7 @@ export interface ProcessAudioResult {
   transcriptKey: string;
   summaryKey: string;
   actionItemsKey: string;
+  bundleKey: string;
 }
 
 // ---- Activity input/output shapes (S3 keys, never payloads) ----
@@ -57,9 +59,20 @@ export interface ActionItemsResult {
   actionItemsKey: string;
 }
 
+export interface BundleInput {
+  bucket: string;
+  transcriptKey: string;
+  summaryKey: string;
+  actionItemsKey: string;
+}
+export interface BundleResult {
+  bundleKey: string;
+}
+
 /** The full set of activity signatures, keyed by their registered names. */
 export interface Activities {
   transcribeAudio(input: TranscribeInput): Promise<TranscribeResult>;
   summarizeTranscript(input: SummarizeInput): Promise<SummarizeResult>;
   extractActionItems(input: ActionItemsInput): Promise<ActionItemsResult>;
+  bundleResults(input: BundleInput): Promise<BundleResult>;
 }

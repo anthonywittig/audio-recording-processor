@@ -41,12 +41,21 @@ const { extractActionItems } = proxyActivities<{
   retry: { maximumAttempts: 3 },
 });
 
+const { bundleResults } = proxyActivities<{
+  bundleResults(input: unknown): Promise<{ bundleKey: string }>;
+}>({
+  taskQueue: TASK_QUEUES.bundle,
+  startToCloseTimeout: '2 minutes',
+  retry: { maximumAttempts: 3 },
+});
+
 /**
  * Orchestrates the pipeline:
- *   audio → transcript → (summary ∥ action items)
+ *   audio → transcript → (summary ∥ action items) → bundle
  *
  * Summary and action items both depend only on the transcript, so they run
- * concurrently. Every step passes S3 keys, never file contents; results are
+ * concurrently; the bundle step (Ruby) then combines all three artifacts into
+ * one S3 document. Every step passes S3 keys, never file contents; results are
  * consumed from S3 (by the web app), so the workflow just returns the keys.
  */
 export async function processAudio(input: ProcessAudioInput): Promise<ProcessAudioResult> {
@@ -64,9 +73,19 @@ export async function processAudio(input: ProcessAudioInput): Promise<ProcessAud
     ),
   ]);
 
+  const { bundleKey } = await bundleResults(
+    root.lookupType('arp.v1.BundleInput').create({
+      bucket: input.bucket,
+      transcriptKey,
+      summaryKey: summary.summaryKey,
+      actionItemsKey: actionItems.actionItemsKey,
+    }),
+  );
+
   return {
     transcriptKey,
     summaryKey: summary.summaryKey,
     actionItemsKey: actionItems.actionItemsKey,
+    bundleKey,
   };
 }

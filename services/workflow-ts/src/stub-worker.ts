@@ -12,6 +12,7 @@ const REGISTRY = [
   { taskQueue: TASK_QUEUES.transcribe, activities: { transcribeAudio: stubs.transcribeAudio } },
   { taskQueue: TASK_QUEUES.summarize, activities: { summarizeTranscript: stubs.summarizeTranscript } },
   { taskQueue: TASK_QUEUES.actionItems, activities: { extractActionItems: stubs.extractActionItems } },
+  { taskQueue: TASK_QUEUES.bundle, activities: { bundleResults: stubs.bundleResults } },
 ];
 
 async function run(): Promise<void> {

@@ -3,7 +3,7 @@
 # `<ns>:<name>` can assume the role whose trust policy matches that subject.
 #
 # One role per activity worker: summarize (Go), transcribe (Java), action-items
-# (Python). The intake service's role lives in intake.tf.
+# (Python), bundle (Ruby). The intake service's role lives in intake.tf.
 
 # --- summarize (Go): read OpenAI key from Secrets Manager + S3 read/write ---
 
@@ -175,4 +175,56 @@ resource "aws_iam_role_policy" "action_items" {
 
 output "action_items_role_arn" {
   value = aws_iam_role.action_items.arn
+}
+
+# --- bundle (Ruby): S3 read (three artifacts) + write (the bundle) ---
+
+data "aws_iam_policy_document" "bundle_assume" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    effect  = "Allow"
+    principals {
+      type        = "Federated"
+      identifiers = [module.eks.oidc_provider_arn]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "${module.eks.oidc_provider}:sub"
+      values   = ["system:serviceaccount:${local.app_namespace}:bundle-ruby"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "${module.eks.oidc_provider}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "bundle" {
+  name               = "${local.name}-bundle"
+  assume_role_policy = data.aws_iam_policy_document.bundle_assume.json
+  tags               = local.common_tags
+}
+
+data "aws_iam_policy_document" "bundle" {
+  statement {
+    sid       = "IngestObjects"
+    actions   = ["s3:GetObject", "s3:PutObject"]
+    resources = ["${aws_s3_bucket.ingest.arn}/*"]
+  }
+  statement {
+    sid       = "IngestList"
+    actions   = ["s3:ListBucket"]
+    resources = [aws_s3_bucket.ingest.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "bundle" {
+  name   = "${local.name}-bundle"
+  role   = aws_iam_role.bundle.id
+  policy = data.aws_iam_policy_document.bundle.json
+}
+
+output "bundle_role_arn" {
+  value = aws_iam_role.bundle.arn
 }

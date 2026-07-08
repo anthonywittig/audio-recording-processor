@@ -11,6 +11,7 @@ in a different language:
 | Transcribe | Java | audio → transcript (with speaker diarization) | AWS Transcribe |
 | Summarize | Go | transcript → summary | OpenAI |
 | Action items | Python | transcript → action items | OpenAI |
+| Bundle | Ruby | transcript+summary+actions → one combined S3 doc | — |
 | Intake | TypeScript | S3 upload → starts the workflow | SQS |
 
 Everything in AWS is **Terraform**. The whole stack is meant to be stood up and torn
@@ -36,7 +37,8 @@ down cheaply.
         TS Workflow Worker  (task queue: workflow)
            ├─ transcribe   → queue: transcribe   → Java worker  → S3
            ├─ summarize    → queue: summarize    → Go worker    → S3
-           └─ action-items → queue: action-items → Python worker→ S3
+           ├─ action-items → queue: action-items → Python worker→ S3
+           └─ bundle       → queue: bundle       → Ruby worker  → S3 (combined doc)
 ```
 
 Activities pass **S3 keys**, not payloads, to stay under Temporal's message-size
@@ -53,7 +55,7 @@ aws configure                   # credentials + default region us-east-1
 ```
 
 Runtimes for building the workers (already present on the dev machine): Node, Java+Maven,
-Go, Python 3.
+Go, Python 3, Ruby+Bundler.
 
 **One-time AWS console steps** (not doable in Terraform):
 - **OpenAI API key** — the summarize (Go) and action-items (Python) workers call OpenAI.
@@ -227,9 +229,10 @@ truth for each shape, generated per-language:
 
 | Artifact | proto | Writer | Readers |
 |----------|-------|--------|---------|
-| transcript | `transcript.proto` | Java | Go, Python, web app |
-| summary | `summary.proto` | Go | web app |
-| action items | `action_items.proto` | Python | web app |
+| transcript | `transcript.proto` | Java | Go, Python, Ruby, web app |
+| summary | `summary.proto` | Go | Ruby, web app |
+| action items | `action_items.proto` | Python | Ruby, web app |
+| bundle | `bundle.proto` (imports the three above) | Ruby | — (S3-only for now) |
 
 (The web app reads the proto-JSON directly — no codegen needed.)
 
@@ -321,3 +324,4 @@ ARP_WEB_ORIGIN=$(terraform -chdir=../../infra/terraform/web output -raw web_url)
 - [x] **5** — Automatic S3 intake (upload → S3 event → SQS → intake-ts starts the workflow) — verified end-to-end
 - [x] ~~**6** — SES inbound email~~ — built, verified, then **removed** along with the Ruby email worker once the web app (Phase 7) covered intake and results; see PR history if you want it back.
 - [x] **7** — Web app: **7a** persistent infra + API (CloudFront/S3 site, API GW + Lambda presigning ingest-bucket URLs); **7b** React SPA (record via MediaRecorder → upload → poll results). Verified end-to-end, including two-speaker diarization.
+- [ ] **8** — Ruby bundle worker (`bundleResults` on queue `bundle`): combines transcript + summary + action items into one `bundles/<name>.bundle.json` (proto `Bundle` embedding the three messages). Ruby rejoins the polyglot roster; S3-only, no web app surface yet.

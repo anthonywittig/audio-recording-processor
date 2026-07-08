@@ -5,6 +5,8 @@ import type {
   SummarizeResult,
   ActionItemsInput,
   ActionItemsResult,
+  BundleInput,
+  BundleResult,
 } from './shared';
 
 // Phase-3 stand-ins for the real polyglot activity workers. They return
@@ -30,4 +32,10 @@ export async function extractActionItems(input: ActionItemsInput): Promise<Actio
     input.transcriptKey.replace(/^transcripts\//, 'action-items/') + '.actions.json';
   console.log(`[stub] extractActionItems ${input.transcriptKey} -> ${actionItemsKey}`);
   return { actionItemsKey };
+}
+
+export async function bundleResults(input: BundleInput): Promise<BundleResult> {
+  const bundleKey = input.transcriptKey.replace(/^transcripts\//, 'bundles/') + '.bundle.json';
+  console.log(`[stub] bundleResults ${input.transcriptKey} -> ${bundleKey}`);
+  return { bundleKey };
 }

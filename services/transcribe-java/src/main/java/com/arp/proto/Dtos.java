@@ -61,6 +61,16 @@ public final class Dtos extends com.google.protobuf.GeneratedFile {
   static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_arp_v1_ActionItemsResult_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_arp_v1_BundleInput_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_arp_v1_BundleInput_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_arp_v1_BundleResult_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_arp_v1_BundleResult_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -79,10 +89,13 @@ public final class Dtos extends com.google.protobuf.GeneratedFile {
       "\n\017SummarizeResult\022\023\n\013summary_key\030\001 \001(\t\":" +
       "\n\020ActionItemsInput\022\016\n\006bucket\030\001 \001(\t\022\026\n\016tr" +
       "anscript_key\030\002 \001(\t\"-\n\021ActionItemsResult\022" +
-      "\030\n\020action_items_key\030\001 \001(\tBk\n\rcom.arp.pro" +
-      "toP\001ZXgithub.com/anthonywittig/audio-rec" +
-      "ording-processor/services/summarize-go/g" +
-      "en/arpv1;arpv1b\006proto3"
+      "\030\n\020action_items_key\030\001 \001(\t\"d\n\013BundleInput" +
+      "\022\016\n\006bucket\030\001 \001(\t\022\026\n\016transcript_key\030\002 \001(\t" +
+      "\022\023\n\013summary_key\030\003 \001(\t\022\030\n\020action_items_ke" +
+      "y\030\004 \001(\t\"\"\n\014BundleResult\022\022\n\nbundle_key\030\001 " +
+      "\001(\tBk\n\rcom.arp.protoP\001ZXgithub.com/antho" +
+      "nywittig/audio-recording-processor/servi" +
+      "ces/summarize-go/gen/arpv1;arpv1b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -130,6 +143,18 @@ public final class Dtos extends com.google.protobuf.GeneratedFile {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_arp_v1_ActionItemsResult_descriptor,
         new java.lang.String[] { "ActionItemsKey", });
+    internal_static_arp_v1_BundleInput_descriptor =
+      getDescriptor().getMessageType(7);
+    internal_static_arp_v1_BundleInput_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_arp_v1_BundleInput_descriptor,
+        new java.lang.String[] { "Bucket", "TranscriptKey", "SummaryKey", "ActionItemsKey", });
+    internal_static_arp_v1_BundleResult_descriptor =
+      getDescriptor().getMessageType(8);
+    internal_static_arp_v1_BundleResult_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_arp_v1_BundleResult_descriptor,
+        new java.lang.String[] { "BundleKey", });
     descriptor.resolveAllFeaturesImmutable();
   }
 
