@@ -10,8 +10,8 @@
 //                 ->  action-items/<name>.actions.json
 //
 // Auth is a single shared passcode (header x-arp-passcode) checked against the
-// arp/web-passcode secret — same one-user-POC posture as the inbound email
-// address. The presigned URLs are the actual S3 access control.
+// arp/web-passcode secret — a one-user-POC posture. The presigned URLs are the
+// actual S3 access control.
 
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import {

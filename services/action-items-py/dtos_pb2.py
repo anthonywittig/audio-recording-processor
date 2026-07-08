@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ndtos.proto\x12\x06\x61rp.v1\"O\n\x11ProcessAudioInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x11\n\taudio_key\x18\x02 \x01(\t\x12\x17\n\x0frecipient_email\x18\x03 \x01(\t\"4\n\x0fTranscribeInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x11\n\taudio_key\x18\x02 \x01(\t\"*\n\x10TranscribeResult\x12\x16\n\x0etranscript_key\x18\x01 \x01(\t\"8\n\x0eSummarizeInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x16\n\x0etranscript_key\x18\x02 \x01(\t\"&\n\x0fSummarizeResult\x12\x13\n\x0bsummary_key\x18\x01 \x01(\t\":\n\x10\x41\x63tionItemsInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x16\n\x0etranscript_key\x18\x02 \x01(\t\"-\n\x11\x41\x63tionItemsResult\x12\x18\n\x10\x61\x63tion_items_key\x18\x01 \x01(\t\"|\n\nEmailInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x16\n\x0etranscript_key\x18\x02 \x01(\t\x12\x13\n\x0bsummary_key\x18\x03 \x01(\t\x12\x18\n\x10\x61\x63tion_items_key\x18\x04 \x01(\t\x12\x17\n\x0frecipient_email\x18\x05 \x01(\t\"!\n\x0b\x45mailResult\x12\x12\n\nmessage_id\x18\x01 \x01(\tBk\n\rcom.arp.protoP\x01ZXgithub.com/anthonywittig/audio-recording-processor/services/summarize-go/gen/arpv1;arpv1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ndtos.proto\x12\x06\x61rp.v1\"<\n\x11ProcessAudioInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x11\n\taudio_key\x18\x02 \x01(\tJ\x04\x08\x03\x10\x04\"4\n\x0fTranscribeInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x11\n\taudio_key\x18\x02 \x01(\t\"*\n\x10TranscribeResult\x12\x16\n\x0etranscript_key\x18\x01 \x01(\t\"8\n\x0eSummarizeInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x16\n\x0etranscript_key\x18\x02 \x01(\t\"&\n\x0fSummarizeResult\x12\x13\n\x0bsummary_key\x18\x01 \x01(\t\":\n\x10\x41\x63tionItemsInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x16\n\x0etranscript_key\x18\x02 \x01(\t\"-\n\x11\x41\x63tionItemsResult\x12\x18\n\x10\x61\x63tion_items_key\x18\x01 \x01(\tBk\n\rcom.arp.protoP\x01ZXgithub.com/anthonywittig/audio-recording-processor/services/summarize-go/gen/arpv1;arpv1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,21 +33,17 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n\rcom.arp.protoP\001ZXgithub.com/anthonywittig/audio-recording-processor/services/summarize-go/gen/arpv1;arpv1'
   _globals['_PROCESSAUDIOINPUT']._serialized_start=22
-  _globals['_PROCESSAUDIOINPUT']._serialized_end=101
-  _globals['_TRANSCRIBEINPUT']._serialized_start=103
-  _globals['_TRANSCRIBEINPUT']._serialized_end=155
-  _globals['_TRANSCRIBERESULT']._serialized_start=157
-  _globals['_TRANSCRIBERESULT']._serialized_end=199
-  _globals['_SUMMARIZEINPUT']._serialized_start=201
-  _globals['_SUMMARIZEINPUT']._serialized_end=257
-  _globals['_SUMMARIZERESULT']._serialized_start=259
-  _globals['_SUMMARIZERESULT']._serialized_end=297
-  _globals['_ACTIONITEMSINPUT']._serialized_start=299
-  _globals['_ACTIONITEMSINPUT']._serialized_end=357
-  _globals['_ACTIONITEMSRESULT']._serialized_start=359
-  _globals['_ACTIONITEMSRESULT']._serialized_end=404
-  _globals['_EMAILINPUT']._serialized_start=406
-  _globals['_EMAILINPUT']._serialized_end=530
-  _globals['_EMAILRESULT']._serialized_start=532
-  _globals['_EMAILRESULT']._serialized_end=565
+  _globals['_PROCESSAUDIOINPUT']._serialized_end=82
+  _globals['_TRANSCRIBEINPUT']._serialized_start=84
+  _globals['_TRANSCRIBEINPUT']._serialized_end=136
+  _globals['_TRANSCRIBERESULT']._serialized_start=138
+  _globals['_TRANSCRIBERESULT']._serialized_end=180
+  _globals['_SUMMARIZEINPUT']._serialized_start=182
+  _globals['_SUMMARIZEINPUT']._serialized_end=238
+  _globals['_SUMMARIZERESULT']._serialized_start=240
+  _globals['_SUMMARIZERESULT']._serialized_end=278
+  _globals['_ACTIONITEMSINPUT']._serialized_start=280
+  _globals['_ACTIONITEMSINPUT']._serialized_end=338
+  _globals['_ACTIONITEMSRESULT']._serialized_start=340
+  _globals['_ACTIONITEMSRESULT']._serialized_end=385
 # @@protoc_insertion_point(module_scope)

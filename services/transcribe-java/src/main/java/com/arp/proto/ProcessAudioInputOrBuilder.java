@@ -33,16 +33,4 @@ public interface ProcessAudioInputOrBuilder extends
    */
   com.google.protobuf.ByteString
       getAudioKeyBytes();
-
-  /**
-   * <code>string recipient_email = 3;</code>
-   * @return The recipientEmail.
-   */
-  java.lang.String getRecipientEmail();
-  /**
-   * <code>string recipient_email = 3;</code>
-   * @return The bytes for recipientEmail.
-   */
-  com.google.protobuf.ByteString
-      getRecipientEmailBytes();
 }

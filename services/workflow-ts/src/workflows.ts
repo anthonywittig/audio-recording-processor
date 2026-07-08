@@ -1,6 +1,6 @@
 import { proxyActivities } from '@temporalio/workflow';
 import type { Root } from 'protobufjs';
-import { TASK_QUEUES, type ProcessAudioInput, type EmailResult } from './shared';
+import { TASK_QUEUES, type ProcessAudioInput, type ProcessAudioResult } from './shared';
 
 // protobufjs root for constructing Temporal payload DTOs. Bundled into the
 // workflow (same root the converter uses). Constructing a message is
@@ -41,22 +41,15 @@ const { extractActionItems } = proxyActivities<{
   retry: { maximumAttempts: 3 },
 });
 
-const { sendEmail } = proxyActivities<{
-  sendEmail(input: unknown): Promise<{ messageId: string }>;
-}>({
-  taskQueue: TASK_QUEUES.email,
-  startToCloseTimeout: '2 minutes',
-  retry: { maximumAttempts: 3 },
-});
-
 /**
  * Orchestrates the pipeline:
- *   audio → transcript → (summary ∥ action items) → email
+ *   audio → transcript → (summary ∥ action items)
  *
  * Summary and action items both depend only on the transcript, so they run
- * concurrently. Every step passes S3 keys, never file contents.
+ * concurrently. Every step passes S3 keys, never file contents; results are
+ * consumed from S3 (by the web app), so the workflow just returns the keys.
  */
-export async function processAudio(input: ProcessAudioInput): Promise<EmailResult> {
+export async function processAudio(input: ProcessAudioInput): Promise<ProcessAudioResult> {
   const transcribeInput = root
     .lookupType('arp.v1.TranscribeInput')
     .create({ bucket: input.bucket, audioKey: input.audioKey });
@@ -71,13 +64,9 @@ export async function processAudio(input: ProcessAudioInput): Promise<EmailResul
     ),
   ]);
 
-  return await sendEmail(
-    root.lookupType('arp.v1.EmailInput').create({
-      bucket: input.bucket,
-      transcriptKey,
-      summaryKey: summary.summaryKey,
-      actionItemsKey: actionItems.actionItemsKey,
-      recipientEmail: input.recipientEmail,
-    }),
-  );
+  return {
+    transcriptKey,
+    summaryKey: summary.summaryKey,
+    actionItemsKey: actionItems.actionItemsKey,
+  };
 }

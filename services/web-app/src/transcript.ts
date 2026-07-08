@@ -1,8 +1,7 @@
-// Renders the Transcript proto-JSON the same way the email does
-// (services/email-ruby format_transcript): anonymous diarization labels
-// (spk_0, spk_1, ...) become "Speaker 1", "Speaker 2", ... in first-appearance
-// order, and consecutive segments from one speaker collapse into a single turn.
-// No usable segments -> callers fall back to the flat `text`.
+// Renders the Transcript proto-JSON with speaker attribution: anonymous
+// diarization labels (spk_0, spk_1, ...) become "Speaker 1", "Speaker 2", ...
+// in first-appearance order, and consecutive segments from one speaker collapse
+// into a single turn. No usable segments -> callers fall back to the flat `text`.
 
 export interface TranscriptSegment {
   speaker?: string;

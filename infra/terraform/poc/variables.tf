@@ -1,5 +1,5 @@
 variable "region" {
-  description = "AWS region. Must support EKS, Transcribe, and SES (including inbound receiving)."
+  description = "AWS region. Must support EKS and Transcribe."
   type        = string
   default     = "us-east-1"
 }
@@ -55,6 +55,5 @@ variable "ecr_repositories" {
     "transcribe-java",
     "summarize-go",
     "action-items-py",
-    "email-ruby",
   ]
 }

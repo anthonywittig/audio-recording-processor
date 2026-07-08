@@ -14,7 +14,7 @@ option java_multiple_files = true;
 message ProcessAudioInput {
   string bucket = 1;
   string audio_key = 2;
-  string recipient_email = 3;
+  reserved 3; // was recipient_email (removed with the email step)
 }
 
 message TranscribeInput {
@@ -39,15 +39,4 @@ message ActionItemsInput {
 }
 message ActionItemsResult {
   string action_items_key = 1;
-}
-
-message EmailInput {
-  string bucket = 1;
-  string transcript_key = 2;
-  string summary_key = 3;
-  string action_items_key = 4;
-  string recipient_email = 5;
-}
-message EmailResult {
-  string message_id = 1;
 }
