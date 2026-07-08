@@ -5,9 +5,8 @@
 // Audio bytes never pass through here: uploads and artifact downloads go
 // straight to S3 with presigned URLs. This API only mints URLs and lists what
 // exists, and it reuses the pipeline's key convention:
-//   audio/<name>  ->  transcripts/<name>.json
-//                 ->  summaries/<name>.summary.json
-//                 ->  action-items/<name>.actions.json
+//   audio/<name>  ->  transcripts/<name>.json          (intermediate: status only)
+//                 ->  bundles/<name>.bundle.json       (final: what the UI reads)
 //
 // Auth is a single shared passcode (header x-arp-passcode) checked against the
 // arp/web-passcode secret — a one-user-POC posture. The presigned URLs are the
@@ -63,8 +62,7 @@ function artifactKeys(audioKey: string) {
   const name = audioKey.startsWith('audio/') ? audioKey.slice('audio/'.length) : audioKey;
   return {
     transcript: `transcripts/${name}.json`,
-    summary: `summaries/${name}.summary.json`,
-    actionItems: `action-items/${name}.actions.json`,
+    bundle: `bundles/${name}.bundle.json`,
   };
 }
 
@@ -140,13 +138,14 @@ async function presignGet(key: string): Promise<string> {
 }
 
 async function listRecordings(): Promise<APIGatewayProxyResultV2> {
-  let audio, transcripts, summaries, actionItems;
+  let audio, transcripts, bundles;
   try {
-    [audio, transcripts, summaries, actionItems] = await Promise.all([
+    // The bundle (workflow's last step) is the only artifact the UI fetches;
+    // transcripts/ is listed just to distinguish transcribing from analyzing.
+    [audio, transcripts, bundles] = await Promise.all([
       listPrefix('audio/'),
       listPrefix('transcripts/'),
-      listPrefix('summaries/'),
-      listPrefix('action-items/'),
+      listPrefix('bundles/'),
     ]);
   } catch (err: unknown) {
     // The ingest bucket lives in the (nightly-torn-down) poc stack; surface
@@ -162,20 +161,16 @@ async function listRecordings(): Promise<APIGatewayProxyResultV2> {
       .sort((a, b) => (b[1].lastModified?.getTime() ?? 0) - (a[1].lastModified?.getTime() ?? 0))
       .map(async ([audioKey, meta]) => {
         const keys = artifactKeys(audioKey);
-        const hasTranscript = transcripts.has(keys.transcript);
-        const hasSummary = summaries.has(keys.summary);
-        const hasActionItems = actionItems.has(keys.actionItems);
-        const status = !hasTranscript
-          ? 'transcribing'
-          : hasSummary && hasActionItems
-            ? 'done'
-            : 'analyzing';
+        const hasBundle = bundles.has(keys.bundle);
+        const status = hasBundle
+          ? 'done'
+          : transcripts.has(keys.transcript)
+            ? 'analyzing'
+            : 'transcribing';
 
-        const [audioUrl, transcriptUrl, summaryUrl, actionItemsUrl] = await Promise.all([
+        const [audioUrl, bundleUrl] = await Promise.all([
           presignGet(audioKey),
-          hasTranscript ? presignGet(keys.transcript) : undefined,
-          hasSummary ? presignGet(keys.summary) : undefined,
-          hasActionItems ? presignGet(keys.actionItems) : undefined,
+          hasBundle ? presignGet(keys.bundle) : undefined,
         ]);
 
         return {
@@ -184,7 +179,7 @@ async function listRecordings(): Promise<APIGatewayProxyResultV2> {
           size: meta.size,
           lastModified: meta.lastModified?.toISOString(),
           status,
-          urls: { audio: audioUrl, transcript: transcriptUrl, summary: summaryUrl, actionItems: actionItemsUrl },
+          urls: { audio: audioUrl, bundle: bundleUrl },
         };
       }),
   );

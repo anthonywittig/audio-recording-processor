@@ -1,12 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Recording } from './api';
-import { toTurns, type Transcript } from './transcript';
-
-interface Artifacts {
-  transcript?: Transcript;
-  summary?: string;
-  actionItems?: string[];
-}
+import { toTurns, type Bundle } from './transcript';
 
 const STATUS_LABEL: Record<Recording['status'], string> = {
   transcribing: 'Transcribing…',
@@ -16,30 +10,21 @@ const STATUS_LABEL: Record<Recording['status'], string> = {
 
 export function RecordingCard({ recording }: { recording: Recording }) {
   const [open, setOpen] = useState(false);
-  const [artifacts, setArtifacts] = useState<Artifacts | null>(null);
+  const [bundle, setBundle] = useState<Bundle | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // (Re)fetch artifacts when opened and whenever more of them exist. The
-  // presigned URLs change on every list refresh, so key off which artifacts
-  // exist rather than the URLs themselves.
-  const availability = `${!!recording.urls.transcript}-${!!recording.urls.summary}-${!!recording.urls.actionItems}`;
+  // Fetch the bundle when opened and once it exists. The presigned URL changes
+  // on every list refresh, so key off its existence rather than its value.
+  const hasBundle = !!recording.urls.bundle;
   useEffect(() => {
-    if (!open) return;
+    if (!open || !recording.urls.bundle) return;
     let cancelled = false;
     (async () => {
       try {
-        const { urls } = recording;
-        const [transcript, summary, actionItems] = await Promise.all([
-          urls.transcript ? (await fetch(urls.transcript)).json() : undefined,
-          urls.summary ? (await fetch(urls.summary)).json() : undefined,
-          urls.actionItems ? (await fetch(urls.actionItems)).json() : undefined,
-        ]);
-        if (cancelled) return;
-        setArtifacts({
-          transcript,
-          summary: summary?.summary,
-          actionItems: actionItems?.actionItems,
-        });
+        const res = await fetch(recording.urls.bundle!);
+        if (!res.ok) throw new Error(`bundle fetch ${res.status}`);
+        const data = (await res.json()) as Bundle;
+        if (!cancelled) setBundle(data);
       } catch {
         if (!cancelled) setError('Could not load results (links may have expired — refresh).');
       }
@@ -48,12 +33,13 @@ export function RecordingCard({ recording }: { recording: Recording }) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, availability]);
+  }, [open, hasBundle]);
 
   const when = recording.lastModified
     ? new Date(recording.lastModified).toLocaleString()
     : recording.name;
-  const diarized = artifacts?.transcript ? toTurns(artifacts.transcript) : null;
+  const diarized = bundle?.transcript ? toTurns(bundle.transcript) : null;
+  const actionItems = bundle?.actionItems?.actionItems ?? [];
 
   return (
     <article className={`card recording ${open ? 'open' : ''}`}>
@@ -67,25 +53,25 @@ export function RecordingCard({ recording }: { recording: Recording }) {
           <audio controls preload="none" src={recording.urls.audio} />
           {error && <p className="error">{error}</p>}
 
-          {artifacts?.summary && (
+          {bundle?.summary?.summary && (
             <>
               <h3>Summary</h3>
-              <p className="prewrap">{artifacts.summary}</p>
+              <p className="prewrap">{bundle.summary.summary}</p>
             </>
           )}
 
-          {artifacts?.actionItems && artifacts.actionItems.length > 0 && (
+          {actionItems.length > 0 && (
             <>
               <h3>Action items</h3>
               <ul>
-                {artifacts.actionItems.map((item, i) => (
+                {actionItems.map((item, i) => (
                   <li key={i}>{item}</li>
                 ))}
               </ul>
             </>
           )}
 
-          {artifacts?.transcript && (
+          {bundle?.transcript && (
             <>
               <h3>Transcript</h3>
               {diarized ? (
@@ -98,7 +84,7 @@ export function RecordingCard({ recording }: { recording: Recording }) {
                   ))}
                 </>
               ) : (
-                <p className="prewrap">{artifacts.transcript.text}</p>
+                <p className="prewrap">{bundle.transcript.text}</p>
               )}
             </>
           )}
