@@ -4,9 +4,8 @@
 
 export interface RecordingUrls {
   audio: string;
-  transcript?: string;
-  summary?: string;
-  actionItems?: string;
+  /** Presigned GET for the combined arp.v1.Bundle document (once it exists). */
+  bundle?: string;
 }
 
 export type RecordingStatus = 'transcribing' | 'analyzing' | 'done';

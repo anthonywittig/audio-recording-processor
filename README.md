@@ -232,7 +232,7 @@ truth for each shape, generated per-language:
 | transcript | `transcript.proto` | Java | Go, Python, Ruby, web app |
 | summary | `summary.proto` | Go | Ruby, web app |
 | action items | `action_items.proto` | Python | Ruby, web app |
-| bundle | `bundle.proto` (imports the three above) | Ruby | — (S3-only for now) |
+| bundle | `bundle.proto` (imports the three above) | Ruby | web app |
 
 (The web app reads the proto-JSON directly — no codegen needed.)
 
@@ -275,8 +275,9 @@ browser (MediaRecorder) ─▶ CloudFront ──▶ S3 site bucket (static SPA)
 
 - API Lambda source: [services/web-api-ts](services/web-api-ts). Two routes:
   `POST /api/recordings` (mint a presigned upload URL) and `GET /api/recordings`
-  (list `audio/` objects, derive each one's `transcripts/` / `summaries/` /
-  `action-items/` keys, presign GETs for whichever exist).
+  (list `audio/` objects, presign each one's `bundles/<name>.bundle.json` once it
+  exists — the one document the UI fetches; `transcripts/` is listed only to
+  distinguish the transcribing vs. summarizing status).
 - Auth is a shared passcode (header `x-arp-passcode`) checked against the
   `arp/web-passcode` secret — set its value out-of-band like the OpenAI key:
   `aws secretsmanager put-secret-value --secret-id arp/web-passcode --secret-string '<passcode>'`.
@@ -324,4 +325,4 @@ ARP_WEB_ORIGIN=$(terraform -chdir=../../infra/terraform/web output -raw web_url)
 - [x] **5** — Automatic S3 intake (upload → S3 event → SQS → intake-ts starts the workflow) — verified end-to-end
 - [x] ~~**6** — SES inbound email~~ — built, verified, then **removed** along with the Ruby email worker once the web app (Phase 7) covered intake and results; see PR history if you want it back.
 - [x] **7** — Web app: **7a** persistent infra + API (CloudFront/S3 site, API GW + Lambda presigning ingest-bucket URLs); **7b** React SPA (record via MediaRecorder → upload → poll results). Verified end-to-end, including two-speaker diarization.
-- [ ] **8** — Ruby bundle worker (`bundleResults` on queue `bundle`): combines transcript + summary + action items into one `bundles/<name>.bundle.json` (proto `Bundle` embedding the three messages). Ruby rejoins the polyglot roster; S3-only, no web app surface yet.
+- [x] **8** — Ruby bundle worker (`bundleResults` on queue `bundle`): combines transcript + summary + action items into one `bundles/<name>.bundle.json` (proto `Bundle` embedding the three messages). Ruby rejoins the polyglot roster; verified end-to-end. The web app now reads the bundle as its single per-recording document.

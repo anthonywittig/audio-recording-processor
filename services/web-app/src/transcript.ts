@@ -17,6 +17,15 @@ export interface Transcript {
   segments?: TranscriptSegment[];
 }
 
+/** The combined pipeline output (arp.v1.Bundle proto-JSON, written by the
+ *  Ruby bundle worker) — the one document the UI fetches per recording. */
+export interface Bundle {
+  audioKey?: string;
+  transcript?: Transcript;
+  summary?: { summary?: string };
+  actionItems?: { actionItems?: string[] };
+}
+
 export interface Turn {
   name: string;
   text: string;
