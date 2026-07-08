@@ -55,5 +55,6 @@ variable "ecr_repositories" {
     "transcribe-java",
     "summarize-go",
     "action-items-py",
+    "bundle-ruby",
   ]
 }

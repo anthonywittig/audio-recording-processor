@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ndtos.proto\x12\x06\x61rp.v1\"<\n\x11ProcessAudioInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x11\n\taudio_key\x18\x02 \x01(\tJ\x04\x08\x03\x10\x04\"4\n\x0fTranscribeInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x11\n\taudio_key\x18\x02 \x01(\t\"*\n\x10TranscribeResult\x12\x16\n\x0etranscript_key\x18\x01 \x01(\t\"8\n\x0eSummarizeInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x16\n\x0etranscript_key\x18\x02 \x01(\t\"&\n\x0fSummarizeResult\x12\x13\n\x0bsummary_key\x18\x01 \x01(\t\":\n\x10\x41\x63tionItemsInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x16\n\x0etranscript_key\x18\x02 \x01(\t\"-\n\x11\x41\x63tionItemsResult\x12\x18\n\x10\x61\x63tion_items_key\x18\x01 \x01(\tBk\n\rcom.arp.protoP\x01ZXgithub.com/anthonywittig/audio-recording-processor/services/summarize-go/gen/arpv1;arpv1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ndtos.proto\x12\x06\x61rp.v1\"<\n\x11ProcessAudioInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x11\n\taudio_key\x18\x02 \x01(\tJ\x04\x08\x03\x10\x04\"4\n\x0fTranscribeInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x11\n\taudio_key\x18\x02 \x01(\t\"*\n\x10TranscribeResult\x12\x16\n\x0etranscript_key\x18\x01 \x01(\t\"8\n\x0eSummarizeInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x16\n\x0etranscript_key\x18\x02 \x01(\t\"&\n\x0fSummarizeResult\x12\x13\n\x0bsummary_key\x18\x01 \x01(\t\":\n\x10\x41\x63tionItemsInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x16\n\x0etranscript_key\x18\x02 \x01(\t\"-\n\x11\x41\x63tionItemsResult\x12\x18\n\x10\x61\x63tion_items_key\x18\x01 \x01(\t\"d\n\x0b\x42undleInput\x12\x0e\n\x06\x62ucket\x18\x01 \x01(\t\x12\x16\n\x0etranscript_key\x18\x02 \x01(\t\x12\x13\n\x0bsummary_key\x18\x03 \x01(\t\x12\x18\n\x10\x61\x63tion_items_key\x18\x04 \x01(\t\"\"\n\x0c\x42undleResult\x12\x12\n\nbundle_key\x18\x01 \x01(\tBk\n\rcom.arp.protoP\x01ZXgithub.com/anthonywittig/audio-recording-processor/services/summarize-go/gen/arpv1;arpv1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -46,4 +46,8 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_ACTIONITEMSINPUT']._serialized_end=338
   _globals['_ACTIONITEMSRESULT']._serialized_start=340
   _globals['_ACTIONITEMSRESULT']._serialized_end=385
+  _globals['_BUNDLEINPUT']._serialized_start=387
+  _globals['_BUNDLEINPUT']._serialized_end=487
+  _globals['_BUNDLERESULT']._serialized_start=489
+  _globals['_BUNDLERESULT']._serialized_end=523
 # @@protoc_insertion_point(module_scope)

@@ -98,6 +98,38 @@ var $root = ($protobuf.roots["default"] || ($protobuf.roots["default"] = new $pr
                 "protoName": "action_items_key"
               }
             }
+          },
+          "BundleInput": {
+            "fields": {
+              "bucket": {
+                "type": "string",
+                "id": 1
+              },
+              "transcriptKey": {
+                "type": "string",
+                "id": 2,
+                "protoName": "transcript_key"
+              },
+              "summaryKey": {
+                "type": "string",
+                "id": 3,
+                "protoName": "summary_key"
+              },
+              "actionItemsKey": {
+                "type": "string",
+                "id": 4,
+                "protoName": "action_items_key"
+              }
+            }
+          },
+          "BundleResult": {
+            "fields": {
+              "bundleKey": {
+                "type": "string",
+                "id": 1,
+                "protoName": "bundle_key"
+              }
+            }
           }
         }
       }

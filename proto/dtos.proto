@@ -40,3 +40,13 @@ message ActionItemsInput {
 message ActionItemsResult {
   string action_items_key = 1;
 }
+
+message BundleInput {
+  string bucket = 1;
+  string transcript_key = 2;
+  string summary_key = 3;
+  string action_items_key = 4;
+}
+message BundleResult {
+  string bundle_key = 1;
+}
