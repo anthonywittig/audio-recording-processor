@@ -29,6 +29,13 @@ down cheaply.
 
 ## Architecture
 
+![Architecture overview](docs/architecture.svg)
+
+### Detailed view
+
+The same system with every component named — the two Terraform stacks, each
+worker's task queue, and the external services:
+
 ```mermaid
 flowchart TB
   Browser["Browser SPA<br/>(record via MediaRecorder, view results)"]
