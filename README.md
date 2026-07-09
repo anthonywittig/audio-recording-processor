@@ -17,8 +17,9 @@ in a different language:
 Everything in AWS is **Terraform**. The whole stack is meant to be stood up and torn
 down cheaply.
 
-> Status: under construction. See `../.claude/plans/` for the build plan and the phase
-> checklist below.
+> Status: build phases 0–8 are complete and verified end-to-end (see the
+> [phase checklist](#build-phases) below). The compute stack is stood up and torn
+> down as needed; the web app layer stays up.
 
 ## Architecture
 
@@ -83,13 +84,12 @@ aws configure                   # credentials + default region us-east-1
 Runtimes for building the workers (already present on the dev machine): Node, Java+Maven,
 Go, Python 3, Ruby+Bundler.
 
-**One-time AWS console steps** (not doable in Terraform):
+**Out-of-band steps** (kept out of Terraform on purpose):
 - **OpenAI API key** — the summarize (Go) and action-items (Python) workers call OpenAI.
-  The key lives in Secrets Manager as `arp/openai-api-key`. It has already been created
-  for this account, so Terraform must **adopt** it on first apply rather than recreate:
+  Terraform creates the Secrets Manager **container** (`arp/openai-api-key`) but never
+  the value, so the key can't land in git or Terraform state. After every stack
+  bring-up, set the value:
   ```bash
-  terraform import aws_secretsmanager_secret.openai arp/openai-api-key
-  # rotate the value anytime with:
   aws secretsmanager put-secret-value --secret-id arp/openai-api-key \
     --secret-string 'sk-...' --region us-east-1
   ```
@@ -109,7 +109,8 @@ infra/terraform/
   poc/         # the actual stack: VPC, EKS, RDS, ECR, Temporal, workers
   web/         # persistent web app stack: CloudFront + S3 site, API GW + Lambda
 k8s/           # Helm values + worker manifests
-services/      # one directory per worker (workflow-ts, transcribe-java, ...)
+services/      # one directory per service: the five workers + intake-ts,
+               # plus the web app (web-app) and its API Lambda (web-api-ts)
 ```
 
 ## Bring-up
@@ -124,7 +125,13 @@ terraform init && terraform apply
 cd ../poc
 terraform init
 terraform apply
-#   -> writes kubeconfig access; then:
+
+# 3. Set the OpenAI key value (the secret container is recreated empty on every
+#    bring-up — see Prerequisites).
+aws secretsmanager put-secret-value --secret-id arp/openai-api-key \
+  --secret-string 'sk-...' --region us-east-1
+
+# 4. Point kubectl at the new cluster.
 aws eks update-kubeconfig --name arp --region us-east-1
 kubectl get nodes            # should show the managed node group, Ready
 ```
@@ -136,12 +143,23 @@ and the workers via `./k8s/apply.sh` ([Deploying a worker](#deploying-a-worker-p
 ## Teardown
 
 ```bash
+# If Temporal is installed, remove it first so nothing is mid-write to RDS:
+helm uninstall temporal -n temporal
+
 cd infra/terraform/poc
 terraform destroy
 
+# Secrets Manager schedules deleted secrets for recovery (default 30 days), which
+# blocks the NEXT apply from recreating them under the same names — purge them:
+aws secretsmanager delete-secret --secret-id arp/openai-api-key \
+  --force-delete-without-recovery --region us-east-1
+aws secretsmanager delete-secret --secret-id arp/temporal-db \
+  --force-delete-without-recovery --region us-east-1
+
 # The web app stack (infra/terraform/web) is intentionally PERSISTENT — it costs
-# pennies idle and keeps a stable CloudFront URL across nightly poc teardowns.
-# Destroy it (and then the state bucket) only when you're completely done:
+# pennies idle and keeps a stable CloudFront URL across nightly poc teardowns
+# (the app stays up and reports "pipeline down"). Destroy it (and then the state
+# bucket) only when you're completely done:
 cd ../web
 terraform destroy
 cd ../bootstrap
@@ -188,8 +206,10 @@ kubectl exec -n temporal deploy/temporal-admintools -- \
 - **RDS requires SSL** (`rds.force_ssl=1`), so each datastore sets `tls.enabled: true`
   with `enableHostVerification: false` (encrypt without shipping the RDS CA). Without
   this the schema-setup hook fails with `no pg_hba.conf entry ... no encryption`.
-- The `connectAddr` in the values file is the RDS endpoint from `terraform output`; update
-  it if the DB is recreated.
+- The `connectAddr` in the values file is the RDS endpoint (the `host` key in the
+  `arp/temporal-db` secret; see `terraform output db_secret_arn`). It is stable across
+  nightly destroy/apply cycles — the identifier and account/region hash don't change —
+  so it only needs updating if the DB identifier or account changes.
 - **Web UI** is internal (ClusterIP `temporal-web:8080`), nothing is exposed publicly.
   Reach it with a port-forward:
   ```bash
@@ -197,8 +217,8 @@ kubectl exec -n temporal deploy/temporal-admintools -- \
   ```
   Then open http://localhost:8233 — workflow runs are under the `default` namespace:
   http://localhost:8233/namespaces/default/workflows. Each `processAudio` run shows the
-  activity timeline (`transcribeAudio → summarizeTranscript ∥ extractActionItems`), the
-  protobuf payloads at each step, and any retries. Note the UI is not
+  activity timeline (`transcribeAudio → summarizeTranscript ∥ extractActionItems →
+  bundleResults`), the protobuf payloads at each step, and any retries. Note the UI is not
   read-only — you can terminate/signal workflows from it.
 
   `kubectl port-forward` drops the streamed connection on idle (`error: lost connection to
@@ -295,7 +315,7 @@ browser (MediaRecorder) ─▶ CloudFront ──▶ S3 site bucket (static SPA)
                               └─ /api/* ─▶ HTTP API GW ─▶ web-api Lambda (TS)
                                                              │ presigned URLs
                                                              ▼
-   upload PUT / artifact GETs go straight to s3://arp-ingest-<acct>
+   upload PUT / bundle GET go straight to s3://arp-ingest-<acct>
    (audio/ upload ──▶ Phase 5 path: SQS → intake → workflow)
 ```
 
