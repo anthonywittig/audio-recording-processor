@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Recording } from './api';
-import { toTurns, type Bundle } from './transcript';
+import type { Bundle } from './proto/bundle';
+import { toTurns } from './transcript';
 
 const STATUS_LABEL: Record<Recording['status'], string> = {
   transcribing: 'Transcribing…',
