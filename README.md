@@ -28,7 +28,7 @@ flowchart TB
 
   subgraph webstack["Persistent web stack — pennies idle, survives nightly teardown"]
     CF["CloudFront"]
-    Site["S3 site bucket<br/>(built SPA)"]
+    Site[("S3 site bucket<br/>(built SPA)")]
     APIGW["HTTP API Gateway"]
     Lambda["web-api Lambda<br/>(passcode auth, presigned URLs,<br/>status from S3 listings)"]
   end
