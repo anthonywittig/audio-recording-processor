@@ -8,8 +8,8 @@ import "action_items.proto";
 
 // The combined pipeline output: written by bundle-ruby as the workflow's last
 // step, embedding the three per-stage artifacts in one document. Stored in S3
-// as proto-JSON at bundles/<name>.bundle.json. No codegen consumers yet — the
-// proto-JSON is readable by anything later (POC: inspect it in S3 directly).
+// as proto-JSON at bundles/<name>.bundle.json. Read by the web app, which uses
+// ts-proto-generated interfaces (types only) over the parsed JSON.
 message Bundle {
   string audio_key = 1;
   Transcript transcript = 2;
