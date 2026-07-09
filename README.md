@@ -7,12 +7,12 @@ in a different language:
 
 | Step | Language | Does |
 |------|----------|------|
-| Workflow definition | TypeScript | orchestrates the activities |
-| Transcribe | Java | audio → transcript (with speaker diarization) |
-| Summarize | Go | transcript → summary |
-| Action items | Python | transcript → action items |
-| Bundle | Ruby | transcript+summary+actions → one combined S3 doc |
-| Intake | TypeScript | S3 upload → starts the workflow |
+| [Workflow definition](services/workflow-ts/src/workflows.ts) | TypeScript | orchestrates the activities |
+| [Transcribe](services/transcribe-java/src/main/java/com/arp/transcribe/TranscribeActivitiesImpl.java) | Java | audio → transcript (with speaker diarization) |
+| [Summarize](services/summarize-go/summarize.go) | Go | transcript → summary |
+| [Action items](services/action-items-py/activities.py) | Python | transcript → action items |
+| [Bundle](services/bundle-ruby/bundle_results_activity.rb) | Ruby | transcript+summary+actions → one combined S3 doc |
+| [Intake](services/intake-ts/src/index.ts) | TypeScript | S3 upload → starts the workflow |
 
 Everything in AWS is **Terraform**. The whole stack is meant to be stood up and torn
 down cheaply.
