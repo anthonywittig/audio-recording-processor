@@ -5,21 +5,27 @@ A learning-focused POC that orchestrates a **polyglot** audio-processing pipelin
 Temporal workflow drives a chain of single-purpose activities — each deliberately written
 in a different language:
 
-| Step | Language | Does | AWS service |
-|------|----------|------|-------------|
-| Workflow definition | TypeScript | orchestrates the activities | — |
-| Transcribe | Java | audio → transcript (with speaker diarization) | AWS Transcribe |
-| Summarize | Go | transcript → summary | OpenAI |
-| Action items | Python | transcript → action items | OpenAI |
-| Bundle | Ruby | transcript+summary+actions → one combined S3 doc | — |
-| Intake | TypeScript | S3 upload → starts the workflow | SQS |
+| Step | Language | Does |
+|------|----------|------|
+| Workflow definition | TypeScript | orchestrates the activities |
+| Transcribe | Java | audio → transcript (with speaker diarization) |
+| Summarize | Go | transcript → summary |
+| Action items | Python | transcript → action items |
+| Bundle | Ruby | transcript+summary+actions → one combined S3 doc |
+| Intake | TypeScript | S3 upload → starts the workflow |
 
 Everything in AWS is **Terraform**. The whole stack is meant to be stood up and torn
 down cheaply.
 
-> Status: build phases 0–8 are complete and verified end-to-end (see the
-> [phase checklist](#build-phases) below). The compute stack is stood up and torn
+> Status: working end-to-end — record on a phone, get the transcript, summary, and
+> action items in the web app a minute later. The compute stack is stood up and torn
 > down as needed; the web app layer stays up.
+
+<p align="center">
+  <img src="docs/screenshots/web-app-list.png" width="300" alt="Recording list with per-recording pipeline status" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/screenshots/web-app-results.png" width="300" alt="Results view: summary, action items, and diarized transcript" />
+</p>
 
 ## Architecture
 
@@ -69,7 +75,7 @@ flowchart TB
 ```
 
 Activities pass **S3 keys**, not payloads, to stay under Temporal's message-size
-limits. Results are consumed from S3 by the [web app](#web-app-phase-7).
+limits. Results are consumed from S3 by the [web app](#web-app).
 
 ## Prerequisites
 
@@ -137,8 +143,8 @@ kubectl get nodes            # should show the managed node group, Ready
 ```
 
 Terraform stops at the AWS layer. The in-cluster pieces are deployed separately:
-the Temporal server via the helm CLI ([Temporal server](#temporal-server-phase-2))
-and the workers via `./k8s/apply.sh` ([Deploying a worker](#deploying-a-worker-phase-4)).
+the Temporal server via the helm CLI ([Temporal server](#temporal-server))
+and the workers via `./k8s/apply.sh` ([Deploying a worker](#deploying-a-worker)).
 
 ## Teardown
 
@@ -181,7 +187,7 @@ resources): check the console for stray **Load Balancers**, **NAT gateways / EIP
 | ECR / S3 / SQS / Lambda / Transcribe / OpenAI | pennies at POC volume |
 | Web app stack (CloudFront + S3 + API GW + Lambda) | pennies idle — left standing |
 
-## Temporal server (Phase 2)
+## Temporal server
 
 Deployed with the `temporalio/temporal` Helm chart (1.5.0 / Temporal 1.31.1),
 configured for external RDS Postgres and SQL visibility (advanced visibility on
@@ -227,7 +233,7 @@ kubectl exec -n temporal deploy/temporal-admintools -- \
   while true; do kubectl port-forward -n temporal svc/temporal-web 8233:8080; sleep 1; done
   ```
 
-## Deploying a worker (Phase 4)
+## Deploying a worker
 
 Each worker follows the same path — build an image, push to its ECR repo, apply a
 Deployment whose ServiceAccount is IRSA-bound to a least-privilege role. The
@@ -280,7 +286,9 @@ truth for each shape, generated per-language:
 | action items | `action_items.proto` | Python | Ruby, web app |
 | bundle | `bundle.proto` (imports the three above) | Ruby | web app |
 
-(The web app reads the proto-JSON directly — no codegen needed.)
+(The web app is fully on generated code too: ts-proto interfaces, types-only —
+the proto-JSON parses with plain `JSON.parse`, so no proto runtime ships in the
+browser bundle.)
 
 Writers use "always print fields" and readers ignore unknown fields so the languages agree
 byte-for-byte. (`transcribe-raw/` objects are AWS Transcribe's own output, not ours.)
@@ -302,7 +310,7 @@ protobufjs json-module root, with `bundlerOptions.ignoreModules: ['fs']` for the
 sandbox). So every payload the pipeline moves — S3 files and Temporal payloads alike — is
 protobuf-defined.
 
-## Web app (Phase 7)
+## Web app
 
 Record audio in the browser (phone or desktop) and watch the pipeline results
 appear. Lives in its own **persistent** Terraform stack
@@ -316,7 +324,7 @@ browser (MediaRecorder) ─▶ CloudFront ──▶ S3 site bucket (static SPA)
                                                              │ presigned URLs
                                                              ▼
    upload PUT / bundle GET go straight to s3://arp-ingest-<acct>
-   (audio/ upload ──▶ Phase 5 path: SQS → intake → workflow)
+   (audio/ upload ──▶ intake path: SQS → intake → workflow)
 ```
 
 - API Lambda source: [services/web-api-ts](services/web-api-ts). Two routes:
@@ -361,14 +369,3 @@ cd services/web-app
 ARP_WEB_ORIGIN=$(terraform -chdir=../../infra/terraform/web output -raw web_url) npm run dev
 ```
 
-## Build phases
-
-- [x] **0** — Scaffolding & Terraform remote state
-- [x] **1** — Core AWS infra (VPC, EKS, RDS, ECR)
-- [x] **2** — Temporal server via Helm (external RDS, no OpenSearch)
-- [x] **3** — TS workflow worker + stub activities (prove routing)
-- [x] **4** — Polyglot activity workers (Java, Go, Python) — deployed; full pipeline verified end-to-end (audio → transcript → summary + action items)
-- [x] **5** — Automatic S3 intake (upload → S3 event → SQS → intake-ts starts the workflow) — verified end-to-end
-- [x] ~~**6** — SES inbound email~~ — built, verified, then **removed** along with the Ruby email worker once the web app (Phase 7) covered intake and results; see PR history if you want it back.
-- [x] **7** — Web app: **7a** persistent infra + API (CloudFront/S3 site, API GW + Lambda presigning ingest-bucket URLs); **7b** React SPA (record via MediaRecorder → upload → poll results). Verified end-to-end, including two-speaker diarization.
-- [x] **8** — Ruby bundle worker (`bundleResults` on queue `bundle`): combines transcript + summary + action items into one `bundles/<name>.bundle.json` (proto `Bundle` embedding the three messages). Ruby rejoins the polyglot roster; verified end-to-end. The web app now reads the bundle as its single per-recording document.
