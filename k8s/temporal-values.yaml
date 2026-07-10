@@ -8,9 +8,10 @@
 #   - namespace `temporal`
 #   - secret `temporal-db` in that namespace with key `password` (the RDS password)
 #
-# connectAddr is environment-specific — it must match the RDS endpoint (the
-# `host` key in the arp/temporal-db secret; see `terraform output db_secret_arn`).
-# For this POC it is pinned to the current RDS endpoint.
+# connectAddr is environment-specific (the RDS endpoint), so it is NOT set here.
+# It is injected at `helm install` time via `--set` from the `host` key of the
+# arp/temporal-db secret — the same secret this file reads the password from.
+# See the README "Temporal server" section for the exact command.
 
 server:
   enabled: true
@@ -29,7 +30,7 @@ server:
             pluginName: postgres12
             driverName: postgres12
             databaseName: temporal
-            connectAddr: "arp-temporal.c2fk4k2war13.us-east-1.rds.amazonaws.com:5432"
+            # connectAddr injected via `helm install --set` (see header comment).
             connectProtocol: tcp
             user: temporal
             existingSecret: temporal-db
@@ -49,7 +50,7 @@ server:
             pluginName: postgres12
             driverName: postgres12
             databaseName: temporal_visibility
-            connectAddr: "arp-temporal.c2fk4k2war13.us-east-1.rds.amazonaws.com:5432"
+            # connectAddr injected via `helm install --set` (see header comment).
             connectProtocol: tcp
             user: temporal
             existingSecret: temporal-db
