@@ -132,11 +132,12 @@ services/      # one directory per service: the five workers + intake-ts,
 # 1. Create the remote-state bucket (once).
 cd infra/terraform/bootstrap
 terraform init && terraform apply
-#   -> note the state_bucket_name output; if you changed it, update ../poc/backend.tf
+#   -> note the state_bucket_name output, then point the poc/web backends at it:
+cp ../backend.hcl.example ../backend.hcl   # edit if you changed the bucket name
 
 # 2. Stand up the stack.
 cd ../poc
-terraform init
+terraform init -backend-config=../backend.hcl
 terraform apply
 
 # 3. Set the OpenAI key value (the secret container is recreated empty on every
@@ -362,7 +363,7 @@ browser (MediaRecorder) ─▶ CloudFront ──▶ S3 site bucket (static SPA)
 # Bring-up (rarely needed — the stack persists):
 ./services/web-api-ts/build.sh          # bundle the Lambda first
 cd infra/terraform/web
-terraform init && terraform apply
+terraform init -backend-config=../backend.hcl && terraform apply
 #   -> web_url output is the app; set the passcode secret (above) once.
 ```
 

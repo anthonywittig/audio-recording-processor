@@ -54,6 +54,12 @@ venv/
 .bundle/
 vendor/bundle/
 
+# ---- Terraform backend config ----
+# Per-user remote-state bucket name for the partial S3 backends (poc/ + web/).
+# Not secret, but kept out of the repo so a different account can point at its
+# own bucket. See backend.hcl.example.
+infra/terraform/backend.hcl
+
 # ---- k8s local config ----
 # Local override for k8s/apply.sh (account id / region). Not secret, but kept
 # out of the repo so manifests stay account/region-portable. See config.env.example.
