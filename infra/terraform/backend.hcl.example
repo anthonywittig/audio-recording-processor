@@ -1,0 +1,10 @@
+# Copy to backend.hcl (gitignored) — it supplies the remote-state S3 bucket name
+# to BOTH stacks (poc/ and web/), which use it as a partial backend:
+#   cd poc  && terraform init -backend-config=../backend.hcl
+#   cd web  && terraform init -backend-config=../backend.hcl
+#
+# Terraform backend blocks can't use variables, so the bucket name lives here
+# instead of being hardcoded in each backend.tf. It's the value bootstrap prints
+# as `state_bucket_name`. Not a secret — kept per-user so a different account can
+# point at its own bucket without touching committed files.
+bucket = "audio-recording-processor-tfstate-awittig"
