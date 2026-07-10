@@ -201,15 +201,20 @@ configured for external RDS Postgres and SQL visibility (advanced visibility on
 Postgres 12+, so **no OpenSearch**). Values: [k8s/temporal-values.yaml](k8s/temporal-values.yaml).
 
 ```bash
-# namespace + DB password secret (password pulled from Secrets Manager)
+# namespace + DB connection info (host + password pulled from Secrets Manager)
 kubectl create namespace temporal
-PW=$(aws secretsmanager get-secret-value --secret-id arp/temporal-db \
-  --query SecretString --output text | python3 -c "import sys,json;print(json.load(sys.stdin)['password'])")
+SECRET=$(aws secretsmanager get-secret-value --secret-id arp/temporal-db \
+  --query SecretString --output text)
+PW=$(echo "$SECRET"   | python3 -c "import sys,json;print(json.load(sys.stdin)['password'])")
+HOST=$(echo "$SECRET" | python3 -c "import sys,json;print(json.load(sys.stdin)['host'])")
 kubectl create secret generic temporal-db -n temporal --from-literal=password="$PW"
 
+# connectAddr is the RDS endpoint, injected here so it stays out of the values file
 helm repo add temporalio https://go.temporal.io/helm-charts && helm repo update
 helm install temporal temporalio/temporal -n temporal --version 1.5.0 \
-  -f k8s/temporal-values.yaml --timeout 6m
+  -f k8s/temporal-values.yaml --timeout 6m \
+  --set "server.config.persistence.datastores.default.sql.connectAddr=$HOST:5432" \
+  --set "server.config.persistence.datastores.visibility.sql.connectAddr=$HOST:5432"
 
 # register the app namespace the workers use
 kubectl exec -n temporal deploy/temporal-admintools -- \
@@ -219,10 +224,12 @@ kubectl exec -n temporal deploy/temporal-admintools -- \
 - **RDS requires SSL** (`rds.force_ssl=1`), so each datastore sets `tls.enabled: true`
   with `enableHostVerification: false` (encrypt without shipping the RDS CA). Without
   this the schema-setup hook fails with `no pg_hba.conf entry ... no encryption`.
-- The `connectAddr` in the values file is the RDS endpoint (the `host` key in the
-  `arp/temporal-db` secret; see `terraform output db_secret_arn`). It is stable across
-  nightly destroy/apply cycles — the identifier and account/region hash don't change —
-  so it only needs updating if the DB identifier or account changes.
+- `connectAddr` (the RDS endpoint) is **not** in the values file — it's injected at
+  install time via `--set` from the `host` key of the `arp/temporal-db` secret, which
+  Terraform populates ([rds.tf](infra/terraform/poc/rds.tf)). This keeps the
+  environment-specific endpoint out of git. The endpoint is stable across nightly
+  destroy/apply cycles anyway (identifier + account/region hash don't change), so a
+  re-install picks up the current value automatically.
 - **Web UI** is internal (ClusterIP `temporal-web:8080`), nothing is exposed publicly.
   Reach it with a port-forward:
   ```bash
