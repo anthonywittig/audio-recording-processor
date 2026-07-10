@@ -137,7 +137,7 @@ cp ../backend.hcl.example ../backend.hcl   # edit if you changed the bucket name
 
 # 2. Stand up the stack.
 cd ../poc
-terraform init -backend-config=../backend.hcl
+../init.sh poc          # foolproof init — passes the shared backend.hcl for you
 terraform apply
 
 # 3. Set the OpenAI key value (the secret container is recreated empty on every
@@ -363,7 +363,7 @@ browser (MediaRecorder) ─▶ CloudFront ──▶ S3 site bucket (static SPA)
 # Bring-up (rarely needed — the stack persists):
 ./services/web-api-ts/build.sh          # bundle the Lambda first
 cd infra/terraform/web
-terraform init -backend-config=../backend.hcl && terraform apply
+../init.sh web && terraform apply       # ../init.sh <poc|web> passes backend.hcl for you
 #   -> web_url output is the app; set the passcode secret (above) once.
 ```
 
